@@ -21,6 +21,11 @@ if (window.animRequestRef === undefined) {
  */
 class Game extends EventTarget {
   /**
+   * GW engine
+   * @type {GW} engine object
+   */
+  root = null;
+  /**
    * all the scense
    * @type { Scene[] }
    */
@@ -55,7 +60,10 @@ class Game extends EventTarget {
       const tag = event.target.tagName;
       if (tag !== 'CANVAS') return;
       if (!this.activeScene) return;
-      this.activeScene.onClick();
+      // inject mouse coordinate from canvas
+      const x = this.root.canvasMouseX;
+      const y = this.root.canvasMouseY;
+      this.activeScene.onClick(x, y);
     };
     // listening mouse event...
     document.addEventListener('click', this.clickEventHandler);
@@ -183,8 +191,10 @@ class Scene {
 
   /**
    * click handler
+   * @param {number} x cursor x in canvas
+   * @param {number} y cursor y in canvas
    */
-  onClick() {
+  onClick(x, y) {
     //
   }
 
@@ -295,7 +305,9 @@ window.StageProp = StageProp;
 
 // ======== Global game context info will change wile game running ===============
 const GW = {
-  // hammer: null, // to init later
+  canvas: null,
+  canvasMouseX: 0,
+  canvasMouseY: 0,
   globalMouseX: 0,
   globalMouseY: 0,
   isMouseDown: false,
@@ -352,13 +364,103 @@ GW.isGameRunning = function () {
 };
 
 /**
+ * Safe way to avoid repetitive event listening
+ *
+ * @param {string} event event name such as `mousemove`, `mousedown`
+ * @param {Function} listener event handler, or callback
+ */
+const eventHandlerSafeListener = (event, listener) => {
+  if (window[event]) {
+    document.removeEventListener(event, window[event]);
+  }
+  document.addEventListener(event, listener);
+  window[event] = listener;
+};
+
+const isElementCanvas = (htmlElmt) => htmlElmt.tagName === 'CANVAS';
+const getCursorPositionInCanvas = (canvas) => {
+  const canvasRect = canvas.getBoundingClientRect();
+  const canvasX = GW.globalMouseX - canvasRect.x;
+  const canvasY = GW.globalMouseY - canvasRect.y;
+  return { canvasX, canvasY };
+};
+
+// listening mouse move...to save it's position:
+const mouseMoveHandler = function (mouseEvent) {
+  GW.globalMouseX = mouseEvent.clientX;
+  GW.globalMouseY = mouseEvent.clientY;
+
+  const isCanvas = isElementCanvas(mouseEvent.target);
+  if (!isCanvas) return;
+
+  const canvas = mouseEvent.target;
+  const { canvasX, canvasY } = getCursorPositionInCanvas(canvas);
+  GW.canvasMouseX = Math.round(canvasX);
+  GW.canvasMouseY = Math.round(canvasY);
+};
+
+// listening mouse pressed
+const mouseDownHandler = function (mouseEvent) {
+  const isCanvas = isElementCanvas(mouseEvent.target);
+  if (!isCanvas) return;
+
+  GW.isMouseDown = true;
+  // GW.hammer.setState('DOWN');
+  // hitSoundTrack.currentTime = 0;
+  // hitSoundTrack.play();
+};
+
+// listening mouse up
+const mouseUpHandler = function (mouseEvent) {
+  const isCanvas = isElementCanvas(mouseEvent.target);
+  if (!isCanvas) return;
+  // lazy mouse up to extend mouse down state length
+  setTimeout(() => {
+    GW.isMouseDown = false;
+    // GW.hammer.setState('UP');
+  }, 100);
+};
+
+/**
+ * Listening user input:
+ * - mouse move
+ * - mouse down
+ * - mouse up
+ */
+const initUserInputs = () => {
+  eventHandlerSafeListener('mousemove', mouseMoveHandler);
+  eventHandlerSafeListener('mousedown', mouseDownHandler);
+  eventHandlerSafeListener('mouseup', mouseUpHandler);
+};
+
+/**
+ * TODO: PUT TO WHERE?
+ * Cleanup event listeners after left game stage
+ */
+const eventsHandlerCleaner = () => {
+  if (window['mousemove']) {
+    document.removeEventListener('mousemove', window['mousemove']);
+  }
+  if (window['mousedown']) {
+    document.removeEventListener('mousedown', window['mousedown']);
+  }
+  if (window['mouseup']) {
+    document.removeEventListener('mouseup', window['mouseup']);
+  }
+  console.log(`## event handlers cleaned up!`);
+};
+
+/**
  * setup canvas for game engine
  */
 GW.initStage = function (canvasId, canvasWidth, canvasHeight) {
   const canvas = document.getElementById(canvasId);
+  GW.canvas = canvas;
   GW.stage = canvas.getContext('2d');
   GW.stageWidth = canvasWidth;
   GW.stageHeight = canvasHeight;
+  // add event listeners
+  initUserInputs();
 };
 
 /**
@@ -374,6 +476,7 @@ GW.startGame = function (game) {
   GW.game = game;
   GW.game.onStart();
   GW.mainLoop();
+  game.root = GW;
 };
 
 GW.stopGame = function () {

@@ -12,3 +12,5 @@ const screens = [new WelcomeScreen(), new MainScreen()];
 const game = new Game(screens, { width, height });
 GW.initStage('gw-playground', width, height);
 GW.startGame(game);
+
+console.log(`## GW game started!`);
