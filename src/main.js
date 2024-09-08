@@ -1,4 +1,4 @@
-import { Scene } from './gw.js';
+import { Scene, Button } from './gw.js';
 
 /**
  * Main Scene
@@ -6,28 +6,28 @@ import { Scene } from './gw.js';
 export class MainScreen extends Scene {
   constructor() {
     super('Main');
-    // this.addDrawable();
-  }
 
-  onClick(x, y) {
-    // this.goto('Welcome');
-    console.log(x);
-    console.log(y);
+    const style = {
+      x: 250,
+      y: 200,
+      width: 150,
+      text: 'Go Back',
+      normalSkinColor: 'black',
+    };
+    const btnOnClick = () => this.goto('Welcome');
+    this._button = new Button('backBtn', style, btnOnClick);
+    this.addDrawable(this._button);
   }
 
   onCommit() {
     // console.log(`>>> main commit!`);
   }
 
-  /**
-   * paint assets on stage
-   * @param {CanvasRenderingContext2D} ctx canvas context
-   */
-  onPaint(ctx) {
-    // console.log(`>>> main paint!`);
+  drawBackground(ctx) {
     ctx.fillStyle = 'green';
     ctx.fillRect(0, 0, this.width, this.height);
-    ctx.strokeStyle = 'white';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 1;
     ctx.strokeRect(20, 20, this.width - 40, this.height - 40);
     ctx.font = '36px serif';
     ctx.fillStyle = 'white';

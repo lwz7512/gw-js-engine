@@ -101,6 +101,23 @@ class Game extends EventTarget {
   onRender(ctx) {
     this.activeScene.onPaint(ctx);
   }
+
+  /**
+   * Mouse is moving in stage
+   *
+   * @param {number} x mouse x in stage
+   * @param {number} y mouse y in stage
+   */
+  onMouseOver(x, y) {
+    this.activeScene.onMouseOver(x, y);
+  }
+
+  /**
+   * Mouse left stage(canvas)
+   */
+  onMouseOut() {
+    //
+  }
 }
 
 window.Game = Game;
@@ -173,6 +190,14 @@ class Scene {
   }
 
   /**
+   * background drawing insider of `onPaint`, to override in sub class
+   * @param {CanvasRenderingContext2D} ctx canvas context
+   */
+  drawBackground(ctx) {
+    //
+  }
+
+  /**
    * Remove drawable by id
    * @param {string} id drawable id
    */
@@ -190,12 +215,32 @@ class Scene {
   }
 
   /**
-   * click handler
-   * @param {number} x cursor x in canvas
-   * @param {number} y cursor y in canvas
+   * Scene click handler, dont override this function in sub class!
+   * @param {number} x mouse x in canvas
+   * @param {number} y mouse y in canvas
    */
   onClick(x, y) {
-    //
+    this.drawables.forEach((d) => {
+      if (!d.isOnMe) return;
+      const isTouched = d.isOnMe(x, y);
+      isTouched && d.onClick();
+    });
+  }
+
+  /**
+   * Callback while mouse is moving in stage, dont override this function in sub class!
+   *
+   * @param {number} x mouse x position in stage
+   * @param {number} y mouse y position in stage
+   */
+  onMouseOver(x, y) {
+    // console.log(`>>> mouse moving in screne...`);
+    this.drawables.forEach((d) => {
+      if (!d.isOnMe) return;
+      const isTouched = d.isOnMe(x, y);
+      isTouched && d.onMouseOver();
+      !isTouched && d.onMouseOut();
+    });
   }
 
   /**
@@ -206,10 +251,12 @@ class Scene {
   }
 
   /**
-   * paint assets on stage
+   * paint drawables(such as buttons) on stage, dont override this function in sub class!
    * @param {CanvasRenderingContext2D} ctx canvas context
    */
   onPaint(ctx) {
+    if (!ctx) return console.warn(`NO ctx passed into paint!`);
+    this.drawBackground(ctx);
     this.drawables.forEach((d) => d.onDraw(ctx));
   }
 
@@ -234,10 +281,13 @@ window.Scene = Scene;
  * Abstract class for display object such as `Character` and `Prop`
  */
 class Drawable {
+  /**
+   * unique id or name
+   */
   _id = '';
 
   /**
-   * @param {string} id display object id
+   * @param {string} id display object id or name
    */
   set id(id) {
     this._id = id;
@@ -260,15 +310,65 @@ class Drawable {
 }
 
 /**
+ * Interactive UI
+ */
+class Interactivable extends Drawable {
+  /**
+   * display attribute
+   */
+  _style = {
+    x: 0, // x value in canvas
+    y: 0, // y value in canvas
+    width: 100,
+    height: 30,
+  };
+  /**
+   * Check if mouse is above current drawable object.
+   *
+   * @param {number} mouseX mouse in canvas horizontal coordinate
+   * @param {number} mouseY mouse in canvas vertical coordinate
+   */
+  isOnMe(mouseX, mouseY) {
+    const { x, y, width, height } = this._style;
+    const beyondTL = mouseX > x && mouseY > y;
+    const withinBR = mouseX < x + width && mouseY < y + height;
+    return beyondTL && withinBR;
+  }
+
+  set style(style) {
+    this._style = style;
+  }
+
+  get style() {
+    return this._style;
+  }
+
+  onMouseOver() {
+    //
+  }
+
+  onMouseOut() {
+    //
+  }
+
+  onClick() {
+    //
+  }
+}
+
+/**
  * Character class
  */
-class Character extends Drawable {
+class Character extends Interactivable {
   /**
-   * set up character
-   * @param {string} id
+   * set up character unique id or name
+   * @param {string} idOrName
    */
-  constructor(id) {
-    super.id = id;
+  constructor(idOrName, style) {
+    super.id = idOrName;
+    if (style) {
+      this.style = { ...this._style, ...style };
+    }
   }
 
   onChange() {
@@ -284,13 +384,16 @@ window.Character = Character;
 /**
  * Stage Prop class
  */
-class StageProp extends Drawable {
+class StageProp extends Interactivable {
   /**
-   * set up stage prop
-   * @param {string} id
+   * set up stage prop unique id or name
+   * @param {string} idOrName
    */
-  constructor(id) {
-    super.id = id;
+  constructor(idOrName, style) {
+    super.id = idOrName;
+    if (style) {
+      this.style = { ...this._style, ...style };
+    }
   }
 
   onChange() {
@@ -302,6 +405,63 @@ class StageProp extends Drawable {
 }
 
 window.StageProp = StageProp;
+
+/**
+ * Abstract Button class
+ */
+class Button extends Interactivable {
+  _style = {
+    x: 10,
+    y: 10,
+    normalSkinColor: 'red',
+    labelSkinColor: 'white',
+    width: 100,
+    height: 30,
+    text: 'Enter',
+  };
+
+  _isMouseOver = false;
+  _onClickCallback = undefined;
+
+  /**
+   * set up button unique id or name
+   * @param {string} idOrName
+   */
+  constructor(idOrName, style, onClick) {
+    super();
+    super.id = idOrName;
+    if (style) {
+      this._style = { ...this._style, ...style };
+    }
+    this._onClickCallback = onClick;
+  }
+
+  onMouseOver() {
+    this._isMouseOver = true;
+  }
+
+  onMouseOut() {
+    this._isMouseOver = false;
+  }
+
+  onClick() {
+    this._onClickCallback && this._onClickCallback();
+  }
+
+  onDraw(ctx) {
+    const { normalSkinColor, x, y, width, height, text } = this._style;
+    const strokeWidth = this._isMouseOver ? 3 : 1;
+    ctx.fillStyle = normalSkinColor;
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeStyle = normalSkinColor;
+    ctx.lineWidth = strokeWidth;
+    ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
+    // draw text
+    ctx.font = '24px serif';
+    ctx.fillStyle = 'white';
+    ctx.fillText(text, x + 20, y + 22);
+  }
+}
 
 // ======== Global game context info will change wile game running ===============
 const GW = {
@@ -391,12 +551,16 @@ const mouseMoveHandler = function (mouseEvent) {
   GW.globalMouseY = mouseEvent.clientY;
 
   const isCanvas = isElementCanvas(mouseEvent.target);
-  if (!isCanvas) return;
+  if (!isCanvas) {
+    GW.game && GW.game.onMouseOut();
+    return;
+  }
 
   const canvas = mouseEvent.target;
   const { canvasX, canvasY } = getCursorPositionInCanvas(canvas);
-  GW.canvasMouseX = Math.round(canvasX);
-  GW.canvasMouseY = Math.round(canvasY);
+  const x = (GW.canvasMouseX = Math.round(canvasX));
+  const y = (GW.canvasMouseY = Math.round(canvasY));
+  GW.game && GW.game.onMouseOver(x, y);
 };
 
 // listening mouse pressed
@@ -405,9 +569,6 @@ const mouseDownHandler = function (mouseEvent) {
   if (!isCanvas) return;
 
   GW.isMouseDown = true;
-  // GW.hammer.setState('DOWN');
-  // hitSoundTrack.currentTime = 0;
-  // hitSoundTrack.play();
 };
 
 // listening mouse up
@@ -417,7 +578,6 @@ const mouseUpHandler = function (mouseEvent) {
   // lazy mouse up to extend mouse down state length
   setTimeout(() => {
     GW.isMouseDown = false;
-    // GW.hammer.setState('UP');
   }, 100);
 };
 
@@ -531,4 +691,4 @@ GW.stateUpdaterBySecond = function () {
   //
 };
 
-export { GW, Game, Scene };
+export { GW, Game, Scene, Button };
