@@ -406,63 +406,6 @@ class StageProp extends Interactivable {
 
 window.StageProp = StageProp;
 
-/**
- * Abstract Button class
- */
-class Button extends Interactivable {
-  _style = {
-    x: 10,
-    y: 10,
-    normalSkinColor: 'red',
-    labelSkinColor: 'white',
-    width: 100,
-    height: 30,
-    text: 'Enter',
-  };
-
-  _isMouseOver = false;
-  _onClickCallback = undefined;
-
-  /**
-   * set up button unique id or name
-   * @param {string} idOrName
-   */
-  constructor(idOrName, style, onClick) {
-    super();
-    super.id = idOrName;
-    if (style) {
-      this._style = { ...this._style, ...style };
-    }
-    this._onClickCallback = onClick;
-  }
-
-  onMouseOver() {
-    this._isMouseOver = true;
-  }
-
-  onMouseOut() {
-    this._isMouseOver = false;
-  }
-
-  onClick() {
-    this._onClickCallback && this._onClickCallback();
-  }
-
-  onDraw(ctx) {
-    const { normalSkinColor, x, y, width, height, text } = this._style;
-    const strokeWidth = this._isMouseOver ? 3 : 1;
-    ctx.fillStyle = normalSkinColor;
-    ctx.fillRect(x, y, width, height);
-    ctx.strokeStyle = normalSkinColor;
-    ctx.lineWidth = strokeWidth;
-    ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
-    // draw text
-    ctx.font = '24px serif';
-    ctx.fillStyle = 'white';
-    ctx.fillText(text, x + 20, y + 22);
-  }
-}
-
 // ======== Global game context info will change wile game running ===============
 const GW = {
   canvas: null,
@@ -690,5 +633,64 @@ GW.mainLoop = function () {
 GW.stateUpdaterBySecond = function () {
   //
 };
+
+// =============== Put drawable display class under GW =====================
+
+/**
+ * Abstract Button class
+ */
+class Button extends Interactivable {
+  _style = {
+    x: 10,
+    y: 10,
+    normalSkinColor: 'red',
+    labelSkinColor: 'white',
+    width: 100,
+    height: 30,
+    text: 'Enter',
+  };
+
+  _isMouseOver = false;
+  _onClickCallback = undefined;
+
+  /**
+   * set up button unique id or name
+   * @param {string} idOrName
+   */
+  constructor(style, onClick, idOrName) {
+    super();
+    super.id = this._style.text || idOrName;
+    if (style) {
+      this._style = { ...this._style, ...style };
+    }
+    this._onClickCallback = onClick;
+  }
+
+  onMouseOver() {
+    this._isMouseOver = true;
+  }
+
+  onMouseOut() {
+    this._isMouseOver = false;
+  }
+
+  onClick() {
+    this._onClickCallback && this._onClickCallback();
+  }
+
+  onDraw(ctx) {
+    const { normalSkinColor, x, y, width, height, text } = this._style;
+    const strokeWidth = this._isMouseOver ? 3 : 1;
+    ctx.fillStyle = normalSkinColor;
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeStyle = normalSkinColor;
+    ctx.lineWidth = strokeWidth;
+    ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
+    // draw text
+    ctx.font = '24px serif';
+    ctx.fillStyle = 'white';
+    ctx.fillText(text, x + 20, y + 22);
+  }
+}
 
 export { GW, Game, Scene, Button };

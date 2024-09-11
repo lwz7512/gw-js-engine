@@ -16,7 +16,7 @@ export class WelcomeScreen extends Scene {
       text: 'Enter Game',
     };
     const btnOnClick = () => this.goto('Main');
-    this._button = new Button('enterBtn', style, btnOnClick);
+    this._button = new Button(style, btnOnClick);
     this.addDrawable(this._button);
   }
 

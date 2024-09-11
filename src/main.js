@@ -15,7 +15,7 @@ export class MainScreen extends Scene {
       normalSkinColor: 'black',
     };
     const btnOnClick = () => this.goto('Welcome');
-    this._button = new Button('backBtn', style, btnOnClick);
+    this._button = new Button(style, btnOnClick);
     this.addDrawable(this._button);
   }
 
