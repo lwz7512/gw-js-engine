@@ -12,9 +12,9 @@
  * ======== Global game context info will change wile game running ===============
  * NOTE:
  * Vanilla GW object to be included in `gw-esm.js`!
- * @module
+ * @module GW game engine root
  */
-const GW = {
+const GW_APP = {
   canvas: null,
   canvasMouseX: 0,
   canvasMouseY: 0,
@@ -66,7 +66,7 @@ const GW = {
   stopGame: () => undefined,
 };
 
-GW.isGameRunning = function () {
+GW_APP.isGameRunning = function () {
   return window.animationRunning;
 };
 
@@ -87,27 +87,27 @@ const eventHandlerSafeListener = (event, listener) => {
 const isElementCanvas = (htmlElmt) => htmlElmt.tagName === 'CANVAS';
 const getCursorPositionInCanvas = (canvas) => {
   const canvasRect = canvas.getBoundingClientRect();
-  const canvasX = GW.globalMouseX - canvasRect.x;
-  const canvasY = GW.globalMouseY - canvasRect.y;
+  const canvasX = GW_APP.globalMouseX - canvasRect.x;
+  const canvasY = GW_APP.globalMouseY - canvasRect.y;
   return { canvasX, canvasY };
 };
 
 // listening mouse move...to save it's position:
 const mouseMoveHandler = function (mouseEvent) {
-  GW.globalMouseX = mouseEvent.clientX;
-  GW.globalMouseY = mouseEvent.clientY;
+  GW_APP.globalMouseX = mouseEvent.clientX;
+  GW_APP.globalMouseY = mouseEvent.clientY;
 
   const isCanvas = isElementCanvas(mouseEvent.target);
   if (!isCanvas) {
-    GW.gameInstance && GW.gameInstance.onMouseOut();
+    GW_APP.gameInstance && GW_APP.gameInstance.onMouseOut();
     return;
   }
 
   const canvas = mouseEvent.target;
   const { canvasX, canvasY } = getCursorPositionInCanvas(canvas);
-  const x = (GW.canvasMouseX = Math.round(canvasX));
-  const y = (GW.canvasMouseY = Math.round(canvasY));
-  GW.gameInstance && GW.gameInstance.onMouseOver(x, y);
+  const x = (GW_APP.canvasMouseX = Math.round(canvasX));
+  const y = (GW_APP.canvasMouseY = Math.round(canvasY));
+  GW_APP.gameInstance && GW_APP.gameInstance.onMouseOver(x, y);
 };
 
 // listening mouse pressed
@@ -115,7 +115,7 @@ const mouseDownHandler = function (mouseEvent) {
   const isCanvas = isElementCanvas(mouseEvent.target);
   if (!isCanvas) return;
 
-  GW.isMouseDown = true;
+  GW_APP.isMouseDown = true;
 };
 
 // listening mouse up
@@ -124,7 +124,7 @@ const mouseUpHandler = function (mouseEvent) {
   if (!isCanvas) return;
   // lazy mouse up to extend mouse down state length
   setTimeout(() => {
-    GW.isMouseDown = false;
+    GW_APP.isMouseDown = false;
   }, 100);
 };
 
@@ -162,32 +162,32 @@ const eventsHandlerCleaner = () => {
  */
 const initStage = (canvasId, canvasWidth, canvasHeight) => {
   const canvas = document.getElementById(canvasId);
-  GW.canvas = canvas;
-  GW.stage = canvas.getContext('2d');
-  GW.stageWidth = canvasWidth;
-  GW.stageHeight = canvasHeight;
+  GW_APP.canvas = canvas;
+  GW_APP.stage = canvas.getContext('2d');
+  GW_APP.stageWidth = canvasWidth;
+  GW_APP.stageHeight = canvasHeight;
   // add event listeners
   initUserInputs();
 };
 
 /**
  * open loop flag!
- * write the object to GW, so use `GW` rather than `this`!
+ * write the object to GW_APP, so use `GW_APP` rather than `this`!
  * @param {Game} game object
  */
 const startGame = (game) => {
   window.animationRunning = true;
-  if (GW.gameInstance) {
-    GW.gameInstance.destroy();
+  if (GW_APP.gameInstance) {
+    GW_APP.gameInstance.destroy();
   }
-  GW.gameInstance = game;
-  GW.gameInstance.onStart();
-  GW.mainLoop();
+  GW_APP.gameInstance = game;
+  GW_APP.gameInstance.onStart();
+  GW_APP.mainLoop();
   // save engine instance
-  game.root = GW;
+  game.root = GW_APP;
 };
 
-GW.stopGame = function () {
+const stopGame = () => {
   window.animationRunning = false;
   window.cancelAnimationFrame(window.animRequestRef);
   eventsHandlerCleaner();
@@ -195,9 +195,9 @@ GW.stopGame = function () {
 
 /**
  * main loop function:
- * read functions of `GW`
+ * read functions of `GW_APP`
  */
-GW.mainLoop = function () {
+GW_APP.mainLoop = function () {
   // FLAG TO STOP LOOP
   if (!this.isGameRunning()) {
     return;
@@ -206,7 +206,7 @@ GW.mainLoop = function () {
   // increment
   this._loopCounter += 1;
   // schedule next run any way
-  const loop = this.mainLoop.bind(GW);
+  const loop = this.mainLoop.bind(GW_APP);
   window.animRequestRef = window.requestAnimationFrame(loop);
 
   if (this._loopCounter % 2 == 1) {
@@ -236,7 +236,7 @@ GW.mainLoop = function () {
  * TODO: ...
  * Game refresh by second implementation
  */
-GW.stateUpdaterBySecond = function () {
+GW_APP.stateUpdaterBySecond = function () {
   //
 };
 
@@ -253,7 +253,7 @@ if (window.animRequestRef === undefined) {
  */
 class Game extends EventTarget {
   /**
-   * GW engine
+   * GW engine app instance
    * @type {GW} engine object
    */
   root = null;
@@ -746,5 +746,5 @@ class SimpleText extends Drawable {
   }
 }
 
-export { initStage, startGame };
+export { initStage, startGame, stopGame };
 export { Game, Scene, SimpleText, Button };
