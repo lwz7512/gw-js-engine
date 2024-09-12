@@ -749,8 +749,4 @@ class SimpleText extends Drawable {
   }
 }
 
-// put it under GW naming space:
-GW.Button = Button;
-GW.Game = Game;
-GW.Scene = Scene;
-GW.SimpleText = SimpleText;
+export { GW, Game, Scene, SimpleText, Button };

@@ -1,16 +1,16 @@
 {
   "name": "gw-js-engine",
+  "type": "module",
   "version": "0.0.1",
-  "description": "",
+  "description": "Library for GW game engine",
   "main": "./src/lib/gw.js",
   "scripts": {
-    "start": "parcel index.html --open",
-    "build": "parcel build index.html"
+    "dev": "vite",
+    "build": "vite build"
   },
   "dependencies": {},
   "devDependencies": {
-    "@babel/core": "7.2.0",
-    "parcel-bundler": "^1.6.1"
+    "vite": "^5.4.4"
   },
   "keywords": []
 }

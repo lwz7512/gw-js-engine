@@ -1,4 +1,4 @@
-import { Scene, Button, SimpleText } from '../lib/gw-esm.js';
+import { Scene, Button, SimpleText } from '../lib/gw.js';
 
 /**
  * Welcome Scene
