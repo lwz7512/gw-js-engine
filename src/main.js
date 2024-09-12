@@ -4,6 +4,11 @@ import { Scene, Button } from './gw.js';
  * Main Scene
  */
 export class MainScreen extends Scene {
+  /**
+   * @type {Button} single button instance
+   */
+  _button = null;
+
   constructor() {
     super('Main');
 

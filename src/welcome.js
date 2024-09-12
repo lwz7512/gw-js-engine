@@ -1,4 +1,4 @@
-import { Scene, Button } from './gw.js';
+import { Scene, Button, SimpleText } from './gw.js';
 
 /**
  * Welcome Scene
@@ -18,6 +18,8 @@ export class WelcomeScreen extends Scene {
     const btnOnClick = () => this.goto('Main');
     this._button = new Button(style, btnOnClick);
     this.addDrawable(this._button);
+
+    this.addDrawable(new SimpleText());
   }
 
   onCommit() {

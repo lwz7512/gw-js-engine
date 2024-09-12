@@ -120,8 +120,6 @@ class Game extends EventTarget {
   }
 }
 
-window.Game = Game;
-
 /**
  * === Global scene navigator ===
  *  save the active scene
@@ -275,8 +273,6 @@ class Scene {
   }
 }
 
-window.Scene = Scene;
-
 /**
  * Abstract class for display object such as `Character` and `Prop`
  */
@@ -379,8 +375,6 @@ class Character extends Interactivable {
   }
 }
 
-window.Character = Character;
-
 /**
  * Stage Prop class
  */
@@ -404,8 +398,6 @@ class StageProp extends Interactivable {
   }
 }
 
-window.StageProp = StageProp;
-
 // ======== Global game context info will change wile game running ===============
 const GW = {
   canvas: null,
@@ -425,7 +417,7 @@ const GW = {
    * global game object
    * @type {Game | null}
    */
-  game: null,
+  gameInstance: null,
   /**
    * canvas context
    * @type { CanvasRenderingContext2D | undefined }
@@ -495,7 +487,7 @@ const mouseMoveHandler = function (mouseEvent) {
 
   const isCanvas = isElementCanvas(mouseEvent.target);
   if (!isCanvas) {
-    GW.game && GW.game.onMouseOut();
+    GW.gameInstance && GW.gameInstance.onMouseOut();
     return;
   }
 
@@ -503,7 +495,7 @@ const mouseMoveHandler = function (mouseEvent) {
   const { canvasX, canvasY } = getCursorPositionInCanvas(canvas);
   const x = (GW.canvasMouseX = Math.round(canvasX));
   const y = (GW.canvasMouseY = Math.round(canvasY));
-  GW.game && GW.game.onMouseOver(x, y);
+  GW.gameInstance && GW.gameInstance.onMouseOver(x, y);
 };
 
 // listening mouse pressed
@@ -573,18 +565,20 @@ GW.initStage = function (canvasId, canvasWidth, canvasHeight) {
  */
 GW.startGame = function (game) {
   window.animationRunning = true;
-  if (GW.game) {
-    GW.game.destroy();
+  if (GW.gameInstance) {
+    GW.gameInstance.destroy();
   }
-  GW.game = game;
-  GW.game.onStart();
+  GW.gameInstance = game;
+  GW.gameInstance.onStart();
   GW.mainLoop();
+  // save engine instance
   game.root = GW;
 };
 
 GW.stopGame = function () {
   window.animationRunning = false;
   window.cancelAnimationFrame(window.animRequestRef);
+  eventsHandlerCleaner();
 };
 
 /**
@@ -605,7 +599,7 @@ GW.mainLoop = function () {
 
   if (this._loopCounter % 2 == 1) {
     // run game scene `onUpdate` callback
-    this.game.onUpdate();
+    this.gameInstance.onUpdate();
     return;
   }
   if (this._loopCounter % 2 == 0) {
@@ -614,7 +608,7 @@ GW.mainLoop = function () {
       // clear first
       this.stage.clearRect(0, 0, this.stageWidth, this.stageHeight);
       // re-paint
-      this.game.onRender(this.stage);
+      this.gameInstance.onRender(this.stage);
     }
   }
   // NOTE: only continue at each 1.0 second
@@ -666,6 +660,13 @@ class Button extends Interactivable {
     this._onClickCallback = onClick;
   }
 
+  /**
+   * @param {string} text label text
+   */
+  set label(text) {
+    this._style = { ...this._style, text };
+  }
+
   onMouseOver() {
     this._isMouseOver = true;
   }
@@ -688,9 +689,62 @@ class Button extends Interactivable {
     ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
     // draw text
     ctx.font = '24px serif';
+    ctx.textBaseline = 'top';
     ctx.fillStyle = 'white';
-    ctx.fillText(text, x + 20, y + 22);
+    ctx.fillText(text, x + 16, y + 4);
   }
 }
 
-export { GW, Game, Scene, Button };
+/**
+ * draw text on canvas
+ */
+class SimpleText extends Drawable {
+  _style = {
+    x: 0,
+    y: 0,
+    text: 'Hello',
+    fontSize: 12,
+    color: 'white',
+  };
+  /**
+   * construct text object
+   * @param {string} text text content
+   * @param {object} options style including x, y
+   */
+  constructor(text, options) {
+    super();
+    super.id = text;
+    if (text) {
+      this._style.text = text;
+    }
+    this._style = { ...this._style, ...(options || {}) };
+  }
+
+  /**
+   * @param {string} txt text
+   */
+  set text(txt) {
+    this._style.text = txt;
+  }
+
+  /**
+   * draw text with drawing context
+   * @param {CanvasRenderingContext2D} ctx canvas context
+   */
+  onDraw(ctx) {
+    const size = this._style.fontSize;
+    const { x, y, text } = this._style;
+    ctx.font = `${size}px Arial`;
+    ctx.textBaseline = 'top';
+    ctx.fillText(text, x, y);
+  }
+}
+
+// put it under GW naming space:
+GW.Button = Button;
+GW.Game = Game;
+GW.Scene = Scene;
+GW.SimpleText = SimpleText;
+
+// expose to outside use!
+export { GW, Game, Scene, Button, SimpleText };
