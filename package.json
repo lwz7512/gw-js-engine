@@ -2,7 +2,7 @@
   "name": "gw-js-engine",
   "version": "0.0.1",
   "description": "",
-  "main": "index.html",
+  "main": "./src/lib/gw.js",
   "scripts": {
     "start": "parcel index.html --open",
     "build": "parcel build index.html"

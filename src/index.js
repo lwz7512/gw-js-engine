@@ -1,7 +1,7 @@
 // ========= END OF GAME ENGINE IMPLEMENTATION =============
-import { GW, Game } from './gw.js';
-import { WelcomeScreen } from './welcome.js';
-import { MainScreen } from './main.js';
+import { GW, Game } from './lib/gw-esm.js';
+import { WelcomeScreen } from './scenes/welcome.js';
+import { MainScreen } from './scenes/main.js';
 
 /**
  * User implementation for game object!
