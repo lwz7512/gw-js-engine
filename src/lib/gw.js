@@ -66,9 +66,6 @@ const GW = {
   stopGame: () => undefined,
 };
 
-/** save to global */
-window.GW = GW;
-
 GW.isGameRunning = function () {
   return window.animationRunning;
 };
@@ -163,7 +160,7 @@ const eventsHandlerCleaner = () => {
 /**
  * setup canvas for game engine
  */
-GW.initStage = function (canvasId, canvasWidth, canvasHeight) {
+const initStage = (canvasId, canvasWidth, canvasHeight) => {
   const canvas = document.getElementById(canvasId);
   GW.canvas = canvas;
   GW.stage = canvas.getContext('2d');
@@ -178,7 +175,7 @@ GW.initStage = function (canvasId, canvasWidth, canvasHeight) {
  * write the object to GW, so use `GW` rather than `this`!
  * @param {Game} game object
  */
-GW.startGame = function (game) {
+const startGame = (game) => {
   window.animationRunning = true;
   if (GW.gameInstance) {
     GW.gameInstance.destroy();
@@ -749,4 +746,5 @@ class SimpleText extends Drawable {
   }
 }
 
-export { GW, Game, Scene, SimpleText, Button };
+export { initStage, startGame };
+export { Game, Scene, SimpleText, Button };
