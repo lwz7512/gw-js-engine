@@ -1,9 +1,9 @@
 {
   "name": "gw-js-engine",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Library for GW game engine",
-  "main": "./src/lib/gw.js",
+  "main": "./index.html",
   "scripts": {
     "dev": "vite",
     "build": "vite build"
