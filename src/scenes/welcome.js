@@ -1,4 +1,5 @@
-import { Scene, Button, SimpleText } from '../lib/gw.js';
+import { Scene } from '../lib/gw.js';
+import { Button, SimpleText } from '../lib/ui.js';
 
 /**
  * Welcome Scene
@@ -15,11 +16,12 @@ export class WelcomeScreen extends Scene {
       width: 150,
       text: 'Enter Game',
     };
-    const btnOnClick = () => this.goto('Main');
-    this._button = new Button(style, btnOnClick);
-    this.addDrawable(this._button);
 
     const options = { x: 160, y: 90, fontSize: 36 };
     this.addDrawable(new SimpleText('== WELCOME ==', options));
+
+    const btnOnClick = () => this.goto('Main');
+    this._button = new Button(style, btnOnClick);
+    this.addDrawable(this._button);
   }
 }

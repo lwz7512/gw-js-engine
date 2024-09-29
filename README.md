@@ -5,6 +5,12 @@ Specifically designed for desktop software `GameWeaver`.
 Created since 2024/09
 
 
+## Features
+
+- Support multiple scene switching;
+- Built-in components: Button, SimpleText;
+
+
 ## Engine Architecture:
  
 ```
@@ -12,12 +18,28 @@ Game ==> Scence ==> Character
                 ==> Prop
 ```
 
-## Usage:
+## Usage in ESM way:
 
 ```
+import { Game, initStage, startGame } from './lib/gw.js';
+import { WelcomeScreen } from './scenes/welcome.js';
+import { MainScreen } from './scenes/main.js';
+
 const width = 640, height = 480;
 const screens = [new WelcomeScreen(), new MainScreen()];
 const game = new Game(screens, { width, height });
+
+initStage('gw-playground', width, height);
+startGame(game);
+```
+
+
+## Usage in UMD way:
+
+```
+const width = 640, height = 480;
+const screens = [new GW.WelcomeScreen(), new GW.MainScreen()];
+const game = new GW.Game(screens, { width, height });
 GW.initStage('gw-playground', width, height);
 GW.startGame(game);
 ```
