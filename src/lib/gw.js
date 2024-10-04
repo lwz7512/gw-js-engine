@@ -208,12 +208,13 @@ GW_APP.mainLoop = function () {
   // schedule next run any way
   const loop = this.mainLoop.bind(GW_APP);
   window.animRequestRef = window.requestAnimationFrame(loop);
-
+  // === onUpdate run first ===
   if (this._loopCounter % 2 == 1) {
     // run game scene `onUpdate` callback
     this.gameInstance.onUpdate();
     return;
   }
+  // === onRender run later ===
   if (this._loopCounter % 2 == 0) {
     // run game scene `onRender` callback
     if (this.stage) {
@@ -224,13 +225,13 @@ GW_APP.mainLoop = function () {
     }
   }
   // NOTE: only continue at each 1.0 second
-  if (this._loopCounter % 40 !== 0) return;
+  if (this._loopCounter % 60 !== 0) return;
 
   // update the mole position at each second
   this.stateUpdaterBySecond();
 
-  // if (typeof this.mainScenePainter !== 'undefined') {}
-  // console.log(`>> Tick/sec!`);
+  // update scene from game instance
+  this.gameInstance.stateUpdaterBySecond();
 };
 /**
  * TODO: ...
@@ -264,7 +265,7 @@ class Game extends EventTarget {
   allScenes = [];
   /**
    * current found from scenes
-   * @type { Scene }
+   * @type { Scene | null }
    */
   activeScene = null;
 
@@ -350,7 +351,18 @@ class Game extends EventTarget {
   onMouseOut() {
     //
   }
-}
+
+  /**
+   * call update function in active scene
+   * @returns
+   */
+  stateUpdaterBySecond() {
+    if (!this.activeScene) return;
+    this.activeScene.onEachSecond();
+  }
+} // end of Game
+
+// ========== END OF Game ==============
 
 /**
  * === Global scene navigator ===
@@ -370,6 +382,9 @@ class Scene {
 
   sceneWidth = 0;
   sceneHeight = 0;
+
+  _stageX = 0;
+  _stageY = 0;
 
   // assets: sounds,images ...
 
@@ -479,13 +494,18 @@ class Scene {
       isTouched && d.onMouseOver();
       !isTouched && d.onMouseOut();
     });
+    // set movable cursor new position...
+    this._stageX = x;
+    this._stageY = y;
   }
 
   /**
    * update game props state
    */
   onCommit() {
-    this.drawables.forEach((d) => d.onChange());
+    const x = this._stageX;
+    const y = this._stageY;
+    this.drawables.forEach((d) => d.onChange(x, y));
   }
 
   /**
@@ -511,7 +531,16 @@ class Scene {
   start() {
     this.goto(this.sceneName);
   }
-}
+
+  /**
+   * current scene callback on each second
+   */
+  onEachSecond() {
+    //
+  }
+} // end of Scene
+
+// ========= END OF Scene class ===============
 
 /**
  * Abstract class for display object such as `Character` and `Prop`
@@ -521,6 +550,12 @@ class Drawable {
    * unique id or name
    */
   _id = '';
+
+  _type = 'Drawable';
+
+  get type() {
+    return this._type;
+  }
 
   /**
    * @param {string} id display object id or name
@@ -558,6 +593,53 @@ class Interactivable extends Drawable {
     width: 100,
     height: 30,
   };
+
+  _type = 'Interactivable';
+
+  /**
+   * wether follow cursor movement or not
+   */
+  _couldFollowCursor = false;
+
+  _cursorX = 0;
+  _cursorY = 0;
+
+  /**
+   *
+   * @param {boolean} followCursor if follow cursor movement
+   */
+  constructor(followCursor) {
+    super();
+    this._couldFollowCursor = followCursor;
+  }
+
+  get type() {
+    return this._type;
+  }
+
+  /**
+   * check wheter follow cursor
+   */
+  get followCursor() {
+    return this._couldFollowCursor;
+  }
+
+  set style(style) {
+    this._style = style;
+  }
+
+  get style() {
+    return this._style;
+  }
+
+  get cursorX() {
+    return this._cursorX;
+  }
+
+  get cursorY() {
+    return this._cursorY;
+  }
+
   /**
    * Check if mouse is above current drawable object.
    *
@@ -571,12 +653,14 @@ class Interactivable extends Drawable {
     return beyondTL && withinBR;
   }
 
-  set style(style) {
-    this._style = style;
-  }
-
-  get style() {
-    return this._style;
+  /**
+   * Update current character position for next frame rendering
+   * @param {number} posX position horizontal
+   * @param {number} posY position vertical
+   */
+  onChange(posX, posY) {
+    this._cursorX = posX;
+    this._cursorY = posY;
   }
 
   onMouseOver() {
@@ -593,7 +677,7 @@ class Interactivable extends Drawable {
 }
 
 /**
- * Character class
+ * Character class that implements some active behavoirs such as ...
  */
 class Character extends Interactivable {
   /**
@@ -607,16 +691,14 @@ class Character extends Interactivable {
     }
   }
 
-  onChange() {
-    //
-  }
   onDraw(ctx) {
     //
   }
 }
 
 /**
- * Stage Prop class
+ * Stage Prop class that implements passive behavior such as mouse following,
+ * the best example is custom cursor.
  */
 class StageProp extends Interactivable {
   /**
@@ -630,9 +712,6 @@ class StageProp extends Interactivable {
     }
   }
 
-  onChange() {
-    //
-  }
   onDraw(ctx) {
     //
   }
@@ -641,4 +720,4 @@ class StageProp extends Interactivable {
 // =============== Put drawable display class under GW =====================
 
 export { initStage, startGame, stopGame };
-export { Game, Scene, Drawable, Interactivable };
+export { Game, Scene, Drawable, Interactivable, Character, StageProp };

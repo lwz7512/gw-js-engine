@@ -8,6 +8,34 @@
 import { Drawable, Interactivable } from './gw';
 
 /**
+ * Fancy Cartoon Cursor created by Canvas API
+ */
+export class FancyCursor extends Interactivable {
+  constructor() {
+    super(true);
+  }
+
+  /**
+   * draw cursor skin
+   * @param {CanvasRenderingContext2D} ctx canvas context
+   */
+  onDraw(ctx) {
+    const p0x = this.cursorX;
+    const p0y = this.cursorY;
+    const p1x = p0x + 25;
+    const p1y = p0y + 25;
+    const p2x = p0x + 25;
+    const p2y = p0y - 25;
+    ctx.fillStyle = 'green';
+    ctx.beginPath();
+    ctx.moveTo(p0x, p0y);
+    ctx.lineTo(p1x, p1y);
+    ctx.lineTo(p2x, p2y);
+    ctx.fill();
+  }
+}
+
+/**
  * Abstract Button class
  */
 export class Button extends Interactivable {
