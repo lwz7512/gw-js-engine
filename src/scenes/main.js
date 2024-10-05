@@ -1,5 +1,5 @@
 import { Scene } from '../lib/gw.js';
-import { Button, SimpleText } from '../lib/ui.js';
+import { Button, SimpleText, FancyCursor } from '../lib/ui.js';
 
 /**
  * Main Scene
@@ -26,9 +26,18 @@ export class MainScreen extends Scene {
     const btnOnClick = () => this.goto('Welcome');
     this._button = new Button(style, btnOnClick);
     this.addDrawable(this._button);
+
+    // last put a cursor on the top
+    const cursor = new FancyCursor();
+    this.addDrawable(cursor);
   }
 
+  /**
+   * if sub scene want to override `onCommit`,
+   * call super.onCommit() is a must!
+   */
   onCommit() {
+    super.onCommit();
     // console.log(`>>> main commit!`);
   }
 

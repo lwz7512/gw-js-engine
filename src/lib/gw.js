@@ -55,7 +55,7 @@ const GW_APP = {
   mainLoop: () => undefined,
   /** run on each second */
   stateUpdaterBySecond: () => {
-    console.log(`>> run on each second!`);
+    // console.log(`>> run on each second!`);
   },
   /**
    * game implementation
@@ -685,6 +685,7 @@ class Character extends Interactivable {
    * @param {string} idOrName
    */
   constructor(idOrName, style) {
+    super();
     super.id = idOrName;
     if (style) {
       this.style = { ...this._style, ...style };
@@ -706,6 +707,7 @@ class StageProp extends Interactivable {
    * @param {string} idOrName
    */
   constructor(idOrName, style) {
+    super();
     super.id = idOrName;
     if (style) {
       this.style = { ...this._style, ...style };

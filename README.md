@@ -8,7 +8,10 @@ Created since 2024/09
 ## Features
 
 - Support multiple scene switching;
-- Built-in components: Button, SimpleText;
+- Built-in components: 
+  + Button, 
+  + SimpleText, 
+  + FancyCursor;
 
 
 ## Engine Architecture:

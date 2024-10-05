@@ -22,16 +22,41 @@ export class FancyCursor extends Interactivable {
   onDraw(ctx) {
     const p0x = this.cursorX;
     const p0y = this.cursorY;
-    const p1x = p0x + 25;
-    const p1y = p0y + 25;
-    const p2x = p0x + 25;
-    const p2y = p0y - 25;
-    ctx.fillStyle = 'green';
+    const p1x = p0x + 10;
+    const p1y = p0y + 34;
+    const p2x = p0x + 16;
+    const p2y = p0y + 22;
+    const p3x = p0x + 30;
+    const p3y = p0y + 20;
+
+    // base shape
     ctx.beginPath();
     ctx.moveTo(p0x, p0y);
     ctx.lineTo(p1x, p1y);
     ctx.lineTo(p2x, p2y);
+    ctx.lineTo(p3x, p3y);
+    ctx.lineTo(p0x, p0y);
+    ctx.closePath();
+    // styling
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 2;
+    ctx.stroke();
+    ctx.fillStyle = 'orange';
     ctx.fill();
+
+    // highlight segments
+    const hp0x = p0x + 6;
+    const hp0y = p0y + 8;
+    const hp1x = p0x + 18;
+    const hp1y = p0y + 16;
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 2;
+    ctx.beginPath();
+    ctx.moveTo(hp0x, hp0y);
+    ctx.lineTo(hp1x, hp1y);
+    ctx.stroke();
   }
 }
 
