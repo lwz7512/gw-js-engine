@@ -1,5 +1,5 @@
 import { Scene } from '../lib/gw.js';
-import { Button, SimpleText, FancyCursor } from '../lib/ui.js';
+import { Button, SimpleText } from '../lib/ui.js';
 
 /**
  * Welcome Scene
@@ -23,10 +23,6 @@ export class WelcomeScreen extends Scene {
     const btnOnClick = () => this.goto('Main');
     this._button = new Button(style, btnOnClick);
     this.addDrawable(this._button);
-
-    // last put a cursor on the top
-    const cursor = new FancyCursor();
-    this.addDrawable(cursor);
   }
 
   onEachSecond() {

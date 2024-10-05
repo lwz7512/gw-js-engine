@@ -8,6 +8,8 @@
  *                 ==> Prop
  */
 
+import { FancyCursor, Interactivable } from './ui';
+
 /**
  * ======== Global game context info will change wile game running ===============
  * NOTE:
@@ -255,7 +257,7 @@ if (window.animRequestRef === undefined) {
 class Game extends EventTarget {
   /**
    * GW engine app instance
-   * @type {GW} engine object
+   * @type { GW } engine object
    */
   root = null;
   /**
@@ -269,19 +271,35 @@ class Game extends EventTarget {
    */
   activeScene = null;
 
+  /**
+   * click event handler on stage
+   */
   clickEventHandler = null;
+
+  /**
+   * global cursor object
+   * @type { Interactivable }
+   */
+  cursor = null;
+
+  _stageX = 0;
+  _stageY = 0;
 
   /**
    * Inject all the scenes of game, and setup scene attributes
    *
    * @param {Scene[]} scenes scene list
-   * @param {object} game attributes, { width, height }
+   * @param {object} game attributes, { width, height, cursor }
    */
   constructor(scenes, options) {
     super(); // must to have for `EventTarget`
 
-    const { width, height } = options;
+    const { width, height, cursor } = options;
     this.allScenes = scenes;
+
+    // set cursor object from option, FancyCursor by default.
+    this.cursor = cursor || new FancyCursor();
+
     // setup scene attributes through game options!
     this.allScenes.forEach((s) => {
       s.navigator = sceneNavigator;
@@ -322,9 +340,13 @@ class Game extends EventTarget {
     const noScenes = this.allScenes.length == 0;
     if (noScenes) return;
 
+    // cache current scene to update later
     this.activeScene = this.allScenes.find((s) => s.isActive());
 
-    // re-calculate properties changes
+    // update cursor first
+    this.cursor.onChange(this._stageX, this._stageY);
+
+    // then update scene
     this.activeScene.onCommit();
   }
   /**
@@ -332,7 +354,10 @@ class Game extends EventTarget {
    * @param {CanvasRenderingContext2D} ctx canvas context2D
    */
   onRender(ctx) {
+    // first render scene
     this.activeScene.onPaint(ctx);
+    // then, render cursor!
+    this.cursor.onDraw(ctx);
   }
 
   /**
@@ -342,6 +367,8 @@ class Game extends EventTarget {
    * @param {number} y mouse y in stage
    */
   onMouseOver(x, y) {
+    this._stageX = x;
+    this._stageY = y;
     this.activeScene.onMouseOver(x, y);
   }
 
@@ -500,12 +527,21 @@ class Scene {
   }
 
   /**
-   * update game props state
+   * inner update game props state, do not override this method in sub-scene class!
    */
   onCommit() {
     const x = this._stageX;
     const y = this._stageY;
     this.drawables.forEach((d) => d.onChange(x, y));
+    // call sub-scene class commit!
+    this.onSceneUpdate();
+  }
+
+  /**
+   * abstract method for sub-scene class implementation use
+   */
+  onSceneUpdate() {
+    //
   }
 
   /**
@@ -542,184 +578,5 @@ class Scene {
 
 // ========= END OF Scene class ===============
 
-/**
- * Abstract class for display object such as `Character` and `Prop`
- */
-class Drawable {
-  /**
-   * unique id or name
-   */
-  _id = '';
-
-  _type = 'Drawable';
-
-  get type() {
-    return this._type;
-  }
-
-  /**
-   * @param {string} id display object id or name
-   */
-  set id(id) {
-    this._id = id;
-  }
-
-  get id() {
-    return this._id;
-  }
-
-  onChange() {
-    //
-  }
-  /**
-   * paint me with canvas API
-   * @param {CanvasRenderingContext2D} ctx canvas context
-   */
-  onDraw(ctx) {
-    //
-  }
-}
-
-/**
- * Interactive UI
- */
-class Interactivable extends Drawable {
-  /**
-   * display attribute
-   */
-  _style = {
-    x: 0, // x value in canvas
-    y: 0, // y value in canvas
-    width: 100,
-    height: 30,
-  };
-
-  _type = 'Interactivable';
-
-  /**
-   * wether follow cursor movement or not
-   */
-  _couldFollowCursor = false;
-
-  _cursorX = 0;
-  _cursorY = 0;
-
-  /**
-   *
-   * @param {boolean} followCursor if follow cursor movement
-   */
-  constructor(followCursor) {
-    super();
-    this._couldFollowCursor = followCursor;
-  }
-
-  get type() {
-    return this._type;
-  }
-
-  /**
-   * check wheter follow cursor
-   */
-  get followCursor() {
-    return this._couldFollowCursor;
-  }
-
-  set style(style) {
-    this._style = style;
-  }
-
-  get style() {
-    return this._style;
-  }
-
-  get cursorX() {
-    return this._cursorX;
-  }
-
-  get cursorY() {
-    return this._cursorY;
-  }
-
-  /**
-   * Check if mouse is above current drawable object.
-   *
-   * @param {number} mouseX mouse in canvas horizontal coordinate
-   * @param {number} mouseY mouse in canvas vertical coordinate
-   */
-  isOnMe(mouseX, mouseY) {
-    const { x, y, width, height } = this._style;
-    const beyondTL = mouseX > x && mouseY > y;
-    const withinBR = mouseX < x + width && mouseY < y + height;
-    return beyondTL && withinBR;
-  }
-
-  /**
-   * Update current character position for next frame rendering
-   * @param {number} posX position horizontal
-   * @param {number} posY position vertical
-   */
-  onChange(posX, posY) {
-    this._cursorX = posX;
-    this._cursorY = posY;
-  }
-
-  onMouseOver() {
-    //
-  }
-
-  onMouseOut() {
-    //
-  }
-
-  onClick() {
-    //
-  }
-}
-
-/**
- * Character class that implements some active behavoirs such as ...
- */
-class Character extends Interactivable {
-  /**
-   * set up character unique id or name
-   * @param {string} idOrName
-   */
-  constructor(idOrName, style) {
-    super();
-    super.id = idOrName;
-    if (style) {
-      this.style = { ...this._style, ...style };
-    }
-  }
-
-  onDraw(ctx) {
-    //
-  }
-}
-
-/**
- * Stage Prop class that implements passive behavior such as mouse following,
- * the best example is custom cursor.
- */
-class StageProp extends Interactivable {
-  /**
-   * set up stage prop unique id or name
-   * @param {string} idOrName
-   */
-  constructor(idOrName, style) {
-    super();
-    super.id = idOrName;
-    if (style) {
-      this.style = { ...this._style, ...style };
-    }
-  }
-
-  onDraw(ctx) {
-    //
-  }
-}
-
-// =============== Put drawable display class under GW =====================
-
 export { initStage, startGame, stopGame };
-export { Game, Scene, Drawable, Interactivable, Character, StageProp };
+export { Game, Scene };

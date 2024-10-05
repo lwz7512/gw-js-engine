@@ -21,6 +21,7 @@ Game ==> Scence ==> Character
                 ==> Prop
                 ==> Button
                 ==> SimpleText
+                ==> FancyCursor
 ```
 
 ## Usage in ESM way:
@@ -53,4 +54,5 @@ GW.startGame(game);
 ## Version history
 
 - `v0.0.2` change build tool to vite to support engine library `ESM`/`UMD` export, @2024/09/12;
-- `v0.0.3` fix `SimpleText` bug and separate `ui.js` from `gw.js`.
+- `v0.0.3` fix `SimpleText` bug and separate `ui.js` from `gw.js`;
+- `v0.0.4` Implement `FancyCursor` for mouse cursor replacement in `ui.js`;

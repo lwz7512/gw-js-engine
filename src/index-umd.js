@@ -8,4 +8,4 @@ const game = new GW.Game(screens, { width, height });
 GW.initStage('gw-playground', width, height);
 GW.startGame(game);
 
-console.log(`## GW game started in UMD way!`);
+// console.log(`## GW game started in UMD way!`);

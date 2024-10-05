@@ -22,10 +22,6 @@ class MainScreen extends GW.Scene {
     this.addDrawable(this._button);
   }
 
-  onCommit() {
-    // console.log(`>>> main commit!`);
-  }
-
   drawBackground(ctx) {
     ctx.fillStyle = 'green';
     ctx.fillRect(0, 0, this.width, this.height);

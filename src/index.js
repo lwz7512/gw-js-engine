@@ -13,4 +13,4 @@ const game = new Game(screens, { width, height });
 initStage('gw-playground', width, height);
 startGame(game);
 
-console.log(`## GW game started with ESM way!`);
+// console.log(`## GW game started with ESM way!`);
