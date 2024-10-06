@@ -8,9 +8,10 @@ import { MainScreen } from './scenes/main.js';
 const width = 640,
   height = 480;
 const screens = [new WelcomeScreen(), new MainScreen()];
-const game = new Game(screens, { width, height });
+const options = { width, height };
+const game = new Game(screens, options);
 
 initStage('gw-playground', width, height);
 startGame(game);
 
-// console.log(`## GW game started with ESM way!`);
+console.log(`## GW game started with ESM way!`);

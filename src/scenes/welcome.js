@@ -25,6 +25,10 @@ export class WelcomeScreen extends Scene {
     this.addDrawable(this._button);
   }
 
+  onMouseDown() {
+    console.log(`## mouse down on welcome scene!`);
+  }
+
   onEachSecond() {
     // console.log(`>>> one loopin second!`);
     // console.log(new Date().getTime());

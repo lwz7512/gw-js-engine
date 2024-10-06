@@ -8,7 +8,7 @@
  *                 ==> Prop
  */
 
-import { FancyCursor, Interactivable } from './ui';
+import { FancyCursor, Cursor } from './ui';
 
 /**
  * ======== Global game context info will change wile game running ===============
@@ -117,7 +117,12 @@ const mouseDownHandler = function (mouseEvent) {
   const isCanvas = isElementCanvas(mouseEvent.target);
   if (!isCanvas) return;
 
+  // mark global mouse state
   GW_APP.isMouseDown = true;
+  // notify game instance
+  const x = GW_APP.canvasMouseX;
+  const y = GW_APP.canvasMouseY;
+  GW_APP.gameInstance && GW_APP.gameInstance.onMouseDown(x, y);
 };
 
 // listening mouse up
@@ -127,6 +132,10 @@ const mouseUpHandler = function (mouseEvent) {
   // lazy mouse up to extend mouse down state length
   setTimeout(() => {
     GW_APP.isMouseDown = false;
+    // notify game instance
+    const x = GW_APP.canvasMouseX;
+    const y = GW_APP.canvasMouseY;
+    GW_APP.gameInstance && GW_APP.gameInstance.onMouseUp(x, y);
   }, 100);
 };
 
@@ -164,6 +173,11 @@ const eventsHandlerCleaner = () => {
  */
 const initStage = (canvasId, canvasWidth, canvasHeight) => {
   const canvas = document.getElementById(canvasId);
+  if (!canvas) {
+    return console.warn(`## No canvas found for: ${canvasId}`);
+  }
+  // hide cursor
+  canvas.style.cursor = 'none';
   GW_APP.canvas = canvas;
   GW_APP.stage = canvas.getContext('2d');
   GW_APP.stageWidth = canvasWidth;
@@ -178,6 +192,10 @@ const initStage = (canvasId, canvasWidth, canvasHeight) => {
  * @param {Game} game object
  */
 const startGame = (game) => {
+  if (!GW_APP.canvas) {
+    return console.warn(`## No canvas to start game!`);
+  }
+
   window.animationRunning = true;
   if (GW_APP.gameInstance) {
     GW_APP.gameInstance.destroy();
@@ -278,10 +296,16 @@ class Game extends EventTarget {
 
   /**
    * global cursor object
-   * @type { Interactivable }
+   * @type { Cursor }
    */
   cursor = null;
-
+  /**
+   * wether display cursor
+   */
+  _hideCursor = false;
+  /**
+   * cursor position in stage
+   */
   _stageX = 0;
   _stageY = 0;
 
@@ -289,22 +313,33 @@ class Game extends EventTarget {
    * Inject all the scenes of game, and setup scene attributes
    *
    * @param {Scene[]} scenes scene list
-   * @param {object} game attributes, { width, height, cursor }
+   * @param {object} options game attributes: { width, height, cursor, hideCursor }
    */
   constructor(scenes, options) {
-    super(); // must to have for `EventTarget`
+    // must to have for `EventTarget`
+    super();
 
-    const { width, height, cursor } = options;
+    // save all the scenes
     this.allScenes = scenes;
 
+    // set game from options
+    const { width, height, cursor, hideCursor } = options;
+
+    // save cursor setting
+    this._hideCursor = !!hideCursor;
     // set cursor object from option, FancyCursor by default.
-    this.cursor = cursor || new FancyCursor();
+    if (!hideCursor) {
+      this.cursor = cursor || new FancyCursor();
+    }
 
     // setup scene attributes through game options!
     this.allScenes.forEach((s) => {
       s.navigator = sceneNavigator;
       s.width = width;
       s.height = height;
+      if (!hideCursor) {
+        s.cursor = this.cursor;
+      }
     });
     // handle click event with scene
     this.clickEventHandler = (event) => {
@@ -331,7 +366,9 @@ class Game extends EventTarget {
    * activate first screen
    */
   onStart() {
-    if (!this.allScenes) return;
+    if (!this.allScenes) {
+      return console.warn(`## No scenes defined for game!`);
+    }
     this.allScenes[0].start();
   }
 
@@ -344,7 +381,9 @@ class Game extends EventTarget {
     this.activeScene = this.allScenes.find((s) => s.isActive());
 
     // update cursor first
-    this.cursor.onChange(this._stageX, this._stageY);
+    if (!this._hideCursor) {
+      this.cursor.onChange(this._stageX, this._stageY);
+    }
 
     // then update scene
     this.activeScene.onCommit();
@@ -357,7 +396,29 @@ class Game extends EventTarget {
     // first render scene
     this.activeScene.onPaint(ctx);
     // then, render cursor!
-    this.cursor.onDraw(ctx);
+    if (!this._hideCursor) {
+      this.cursor.onDraw(ctx);
+    }
+  }
+
+  /**
+   * Mouse is pressed down in stage
+   *
+   * @param {number} x mouse x in stage
+   * @param {number} y mouse y in stage
+   */
+  onMouseDown(x, y) {
+    this.activeScene.onMouseDown(x, y);
+  }
+
+  /**
+   * Mouse is released down in stage
+   *
+   * @param {number} x mouse x in stage
+   * @param {number} y mouse y in stage
+   */
+  onMouseUp(x, y) {
+    this.activeScene.onMouseUp(x, y);
   }
 
   /**
@@ -413,6 +474,11 @@ class Scene {
   _stageX = 0;
   _stageY = 0;
 
+  /**
+   * @type {Cursor}
+   */
+  _cursor = null;
+
   // assets: sounds,images ...
 
   /**
@@ -427,6 +493,18 @@ class Scene {
    */
   constructor(name) {
     this.sceneName = name;
+  }
+
+  /**
+   * Cache global cursor object
+   * @param {Cursor} it custom cursor
+   */
+  set cursor(it) {
+    this._cursor = it;
+  }
+
+  get cursor() {
+    return this._cursor;
   }
 
   /**
@@ -524,6 +602,26 @@ class Scene {
     // set movable cursor new position...
     this._stageX = x;
     this._stageY = y;
+  }
+
+  /**
+   * Callback when mouse is being pressed in this scene,
+   * set cursor state down from `Scene` class.
+   * @param {number} x mouse x position in stage
+   * @param {number} y mouse y position in stage
+   */
+  onMouseDown(x, y) {
+    this.cursor.setMouseDown();
+  }
+
+  /**
+   * Callback when mouse is being released in this scene,
+   * set cursor state up from `Scene` class.
+   * @param {number} x mouse x position in stage
+   * @param {number} y mouse y position in stage
+   */
+  onMouseUp(x, y) {
+    this.cursor.setMouseUp();
   }
 
   /**

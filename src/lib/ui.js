@@ -74,7 +74,7 @@ export class Interactivable extends Drawable {
    *
    * @param {boolean} followCursor if follow cursor movement
    */
-  constructor(followCursor) {
+  constructor(followCursor = false) {
     super();
     this._couldFollowCursor = followCursor;
   }
@@ -107,7 +107,8 @@ export class Interactivable extends Drawable {
   }
 
   /**
-   * Check if mouse is above current drawable object.
+   * Check if mouse is above current drawable object,
+   * which is used for normal UI components such as Button
    *
    * @param {number} mouseX mouse in canvas horizontal coordinate
    * @param {number} mouseY mouse in canvas vertical coordinate
@@ -138,6 +139,27 @@ export class Interactivable extends Drawable {
   }
 
   onClick() {
+    //
+  }
+}
+
+/**
+ * Abstract cursor with `DOWN` | `UP` state
+ */
+export class Cursor extends Interactivable {
+  constructor() {
+    super();
+  }
+  /** abstract method */
+  setState(stateName) {
+    //
+  }
+  /** abstract method */
+  setMouseDown() {
+    //
+  }
+  /** abstract method */
+  setMouseUp() {
     //
   }
 }
@@ -311,7 +333,7 @@ export class SimpleText extends Drawable {
 /**
  * Fancy Cartoon Cursor created by Canvas API
  */
-export class FancyCursor extends Interactivable {
+export class FancyCursor extends Cursor {
   constructor() {
     super(true);
   }
@@ -338,12 +360,13 @@ export class FancyCursor extends Interactivable {
     ctx.lineTo(p3x, p3y);
     ctx.lineTo(p0x, p0y);
     ctx.closePath();
-    // styling
-    ctx.strokeStyle = 'red';
+    // styling before stroke
     ctx.lineWidth = 2;
     ctx.lineCap = 2;
+    ctx.strokeStyle = 'red';
     ctx.stroke();
     ctx.fillStyle = 'orange';
+    // styling before fill
     ctx.fill();
 
     // highlight segments
