@@ -8,7 +8,8 @@
  *                 ==> Prop
  */
 
-import { FancyCursor, Cursor } from './ui';
+import { GWPainter } from './painter';
+import { FancyCursor, Cursor, Drawable, ShapeDescribable } from './ui';
 
 /**
  * ======== Global game context info will change wile game running ===============
@@ -169,15 +170,28 @@ const eventsHandlerCleaner = () => {
 };
 
 /**
- * setup canvas for game engine
+ * setup canvas for game engine including cursor style
+ *
+ * @param {string} canvasId canvas element id
+ * @param {number} canvasWidth canvas width
+ * @param {number} canvasHeight canvas height
+ * @param {boolean} showFancyCursor wether use fancy cursor, false by default
+ * @returns {void} nothing
  */
-const initStage = (canvasId, canvasWidth, canvasHeight) => {
+const initStage = (
+  canvasId,
+  canvasWidth,
+  canvasHeight,
+  showFancyCursor = false
+) => {
   const canvas = document.getElementById(canvasId);
   if (!canvas) {
     return console.warn(`## No canvas found for: ${canvasId}`);
   }
   // hide cursor
-  canvas.style.cursor = 'none';
+  if (showFancyCursor) {
+    canvas.style.cursor = 'none';
+  }
   GW_APP.canvas = canvas;
   GW_APP.stage = canvas.getContext('2d');
   GW_APP.stageWidth = canvasWidth;
@@ -195,16 +209,24 @@ const startGame = (game) => {
   if (!GW_APP.canvas) {
     return console.warn(`## No canvas to start game!`);
   }
-
+  // global running flag
   window.animationRunning = true;
+
   if (GW_APP.gameInstance) {
     GW_APP.gameInstance.destroy();
   }
   GW_APP.gameInstance = game;
   GW_APP.gameInstance.onStart();
+  // start game looping ...
   GW_APP.mainLoop();
+
+  // === setup game instance ===
   // save engine instance
   game.root = GW_APP;
+  // setup painter ...
+  const ctx = GW_APP.stage;
+  if (!ctx) throw new Error('No canvas context found!');
+  game.painter = new GWPainter(ctx);
 };
 
 const stopGame = () => {
@@ -275,7 +297,7 @@ if (window.animRequestRef === undefined) {
 class Game extends EventTarget {
   /**
    * GW engine app instance
-   * @type { GW } engine object
+   * @type { GW_APP } engine object
    */
   root = null;
   /**
@@ -300,7 +322,7 @@ class Game extends EventTarget {
    */
   cursor = null;
   /**
-   * wether display cursor
+   * wether display builtin cursor
    */
   _hideCursor = false;
   /**
@@ -310,10 +332,15 @@ class Game extends EventTarget {
   _stageY = 0;
 
   /**
+   * @type {GWPainter} shape painter instance
+   */
+  painter = null;
+
+  /**
    * Inject all the scenes of game, and setup scene attributes
    *
    * @param {Scene[]} scenes scene list
-   * @param {object} options game attributes: { width, height, cursor, hideCursor }
+   * @param {object} options game attributes: { width, height, cursor, showFancyCursor? }
    */
   constructor(scenes, options) {
     // must to have for `EventTarget`
@@ -323,12 +350,13 @@ class Game extends EventTarget {
     this.allScenes = scenes;
 
     // set game from options
-    const { width, height, cursor, hideCursor } = options;
+    const { width, height, cursor, showFancyCursor } = options;
 
-    // save cursor setting
-    this._hideCursor = !!hideCursor;
+    // use fancy cursor: true by default
+    this._hideCursor = !showFancyCursor;
+
     // set cursor object from option, FancyCursor by default.
-    if (!hideCursor) {
+    if (!this._hideCursor) {
       this.cursor = cursor || new FancyCursor();
     }
 
@@ -337,7 +365,8 @@ class Game extends EventTarget {
       s.navigator = sceneNavigator;
       s.width = width;
       s.height = height;
-      if (!hideCursor) {
+      s.painter = this.painter;
+      if (!this._hideCursor) {
         s.cursor = this.cursor;
       }
     });
@@ -483,9 +512,15 @@ class Scene {
 
   /**
    * drawable thing: characters, props ...
-   * @type {Drawable[]} display objects that can be drew through canvas API
+   * @type {(Drawable | ShapeDescribable)[]} display objects that can be drew through canvas API
    */
   drawables = [];
+
+  /**
+   * painter from game instance
+   * @type {GWPainter} game painter
+   */
+  _painter = null;
 
   /**
    * initialize scene with `name` and global `sceneNavigator`
@@ -496,6 +531,13 @@ class Scene {
   }
 
   /**
+   * @param {GWPainter} ptr game shape painter
+   */
+  set painter(ptr) {
+    this._painter = ptr;
+  }
+
+  /**
    * Cache global cursor object
    * @param {Cursor} it custom cursor
    */
@@ -503,6 +545,9 @@ class Scene {
     this._cursor = it;
   }
 
+  /**
+   * Get injected cursor object from Game initialization
+   */
   get cursor() {
     return this._cursor;
   }
@@ -649,7 +694,14 @@ class Scene {
   onPaint(ctx) {
     if (!ctx) return console.warn(`NO ctx passed into paint!`);
     this.drawBackground(ctx);
-    this.drawables.forEach((d) => d.onDraw(ctx));
+    // consider use `painter` do draw work!
+    this.drawables.forEach((d) => {
+      if (d.shapeDesc) {
+        return this._painter.draw(d.shapeDesc);
+      }
+      // fallback to legacy callback
+      d.onDraw(ctx);
+    });
   }
 
   /**

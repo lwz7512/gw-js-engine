@@ -5,6 +5,8 @@
  * @date 2024/09/29
  */
 
+import { drawRectWithStroke, drawTextWith, ShapeDesc } from './shape.js';
+
 /**
  * Abstract class for display object such as `Character` and `Prop`
  */
@@ -15,6 +17,10 @@ export class Drawable {
   _id = '';
 
   _type = 'Drawable';
+
+  constructor(type = 'Drawable') {
+    this._type = type;
+  }
 
   get type() {
     return this._type;
@@ -43,6 +49,32 @@ export class Drawable {
    */
   onDraw(ctx) {
     //
+  }
+}
+
+/**
+ * Drawable with shape description object which could be drew by painter
+ */
+export class ShapeDescribable extends Drawable {
+  /**
+   * @type {ShapeDesc} shape description
+   */
+  _shapeDesc = null;
+
+  constructor(sd) {
+    super('Describable');
+    this._shapeDesc = sd;
+  }
+
+  /**
+   * @param {ShapeDesc} sd shape desc object
+   */
+  set shapeDesc(sd) {
+    this._shapeDesc = sd;
+  }
+
+  get shapeDesc() {
+    return this._shapeDesc;
   }
 }
 
@@ -165,23 +197,86 @@ export class Cursor extends Interactivable {
 }
 
 /**
- * Character class that implements some active behavoirs such as ...
+ * Abstract drawing method implementation by state
  */
-export class Character extends Interactivable {
+export class DrawableState {
   /**
-   * set up character unique id or name
-   * @param {string} idOrName
+   * @type {string} state name
    */
-  constructor(idOrName, style) {
-    super();
-    super.id = idOrName;
-    if (style) {
-      this.style = { ...this._style, ...style };
-    }
+  _stateName = null;
+
+  /**
+   * Create a custom state
+   * @param {string} name current name
+   */
+  constructor(name) {
+    this._stateName = name;
   }
 
-  onDraw(ctx) {
+  get name() {
+    return this._stateName;
+  }
+
+  /**
+   * Abstract method to override
+   * @param {CanvasRenderingContext2D} ctx canvas context
+   */
+  draw(ctx) {
     //
+  }
+}
+
+/**
+ * Character class that implements some active behaviors.
+ */
+export class Character extends Interactivable {
+  /** dynamic state */
+  _currentState = null;
+
+  /**
+   * @type {DrawableState[]} character states
+   */
+  _states = [];
+
+  /**
+   * Build a character by states
+   * @param {DrawableState[]} states character states
+   */
+  constructor(states) {
+    super();
+    this._states = states;
+    // set default state
+    this._currentState = states[0].name;
+  }
+
+  /**
+   * update current state
+   * @param {string} name next state name
+   */
+  changeState(name) {
+    this._currentState = name;
+  }
+
+  /**
+   * Get state implementation by current state name.
+   * @returns {DrawableState | undefined}
+   */
+  findState() {
+    const filter = (state) => state.name === this._currentState;
+    return this._states.find(filter);
+  }
+
+  /**
+   * Draw state by state name, this is good case of using shage description!
+   * @param {CanvasRenderingContext2D} ctx canvas context
+   */
+  onDraw(ctx) {
+    const state = this.findState();
+    if (!state) {
+      console.warn(`State not found: ${this._currentState}`);
+      return;
+    }
+    state.draw(ctx);
   }
 }
 
@@ -214,6 +309,7 @@ export class Button extends Interactivable {
   _style = {
     x: 10,
     y: 10,
+    fontSize: 24,
     normalSkinColor: 'red',
     labelSkinColor: 'white',
     width: 100,
@@ -263,19 +359,18 @@ export class Button extends Interactivable {
   onDraw(ctx) {
     ctx.save();
 
-    const { normalSkinColor, x, y, width, height, text } = this._style;
+    const { normalSkinColor, x, y, width, height, text, fontSize } =
+      this._style;
     const strokeWidth = this._isMouseOver ? 3 : 1;
-    ctx.fillStyle = normalSkinColor;
-    ctx.fillRect(x, y, width, height);
-    ctx.strokeStyle = normalSkinColor;
-    ctx.lineWidth = strokeWidth;
-    ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
+    const rectStyle = {
+      fillStyle: normalSkinColor,
+      strokeStyle: normalSkinColor,
+      lineWidth: strokeWidth,
+    };
+    // draw background
+    drawRectWithStroke(ctx, x, y, width, height, rectStyle);
     // draw text
-    ctx.font = '24px Arial';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = 'white';
-    ctx.fillText(text, x + 10, y + 4);
-
+    drawTextWith(ctx, x + 10, y + 4, text, 'white', fontSize);
     ctx.restore();
   }
 }
@@ -318,14 +413,9 @@ export class SimpleText extends Drawable {
    */
   onDraw(ctx) {
     ctx.save();
-
-    const size = this._style.fontSize;
+    const { fontSize, color } = this._style;
     const { x, y, text } = this._style;
-    ctx.font = `${size}px Arial`;
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = this._style.color;
-    ctx.fillText(text, x, y);
-
+    drawTextWith(ctx, x, y, text, color, fontSize);
     ctx.restore();
   }
 }

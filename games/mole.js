@@ -3,6 +3,7 @@ import { Interactivable } from '../src/lib/index.js';
 
 /**
  * Mole state implementation
+ * TODO: modify this class with state machine ...
  * @date 2024/10/06
  */
 export class SimpleMoleState extends Interactivable {

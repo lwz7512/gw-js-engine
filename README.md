@@ -50,6 +50,19 @@ GW.initStage('gw-playground', width, height);
 GW.startGame(game);
 ```
 
+## Get Started Now
+
+```
+$ npm run dev
+```
+
+then visit demo game: `http://localhost:5173/`
+
+
+To use shape maker:
+
+visit: `http://localhost:5173/shape-maker.html`
+
 
 ## Version history
 
