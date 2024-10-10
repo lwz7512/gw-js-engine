@@ -38,9 +38,11 @@ export class Drawable {
   }
 
   /**
-   * scene update properties in one frame interval
+   * Drawable update before `onDraw` in next frame
+   * @param {number} cursorX cursor x postion
+   * @param {number} cursorY cursor y position
    */
-  onChange() {
+  onChange(cursorX, cursorY) {
     //
   }
   /**
@@ -154,8 +156,8 @@ export class Interactivable extends Drawable {
 
   /**
    * Update current character position for next frame rendering
-   * @param {number} posX position horizontal
-   * @param {number} posY position vertical
+   * @param {number} posX cursor position horizontal
+   * @param {number} posY cursor position vertical
    */
   onChange(posX, posY) {
     this._cursorX = posX;
@@ -218,16 +220,17 @@ export class DrawableState {
   }
 
   /**
-   * Abstract method to override
+   * * Abstract method to override
    * @param {CanvasRenderingContext2D} ctx canvas context
+   * @param  {...any} args multiple args...
    */
-  draw(ctx) {
+  draw(ctx, ...args) {
     //
   }
 }
 
 /**
- * Character class that implements some active behaviors.
+ * Character class that implements simple state machine behaviors.
  */
 export class Character extends Interactivable {
   /** dynamic state */

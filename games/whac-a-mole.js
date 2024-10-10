@@ -6,20 +6,16 @@ import { SimpleHammer } from './hammer.js';
 
 // ======= Main Scene ==================
 
-class MainScreen extends Scene {
+class GrassBackground extends Scene {
+  // random grass triangle position
   grassPositions = [];
-  molePositions = [];
-  moles = [];
 
-  hammer = null;
-
-  constructor(width, height) {
-    super('MainScene');
+  constructor(name, width, height) {
+    super(name);
     super.width = width;
     super.height = height;
 
     this.initGrass();
-    this.initMoleGrid(SimpleMoleState);
   }
 
   initGrass() {
@@ -31,30 +27,6 @@ class MainScreen extends Scene {
         startX,
         startY,
       });
-    }
-  }
-
-  /**
-   * Moles grid to cache each state of mole
-   * @param { SimpleMoleState } MoleStateClass
-   * @returns
-   */
-  initMoleGrid(MoleStateClass) {
-    // PARAMETERS USED IN THIS DRAWING:
-    const mSize = 4;
-    const mStartX = 36;
-    const mStartY = 100;
-    const mWidth = 100;
-    const mHeight = 64;
-    for (let row = 0; row < mSize; row += 1) {
-      for (let col = 0; col < mSize; col += 1) {
-        const posX = col * mWidth + mStartX;
-        const posY = row * mHeight + mStartY;
-        const index = row * mSize + col;
-        const mole = new MoleStateClass(posX, posY, index);
-        this.moles.push(mole);
-        this.addDrawable(mole);
-      }
     }
   }
 
@@ -109,20 +81,68 @@ class MainScreen extends Scene {
       ctx.fill();
     });
   }
+}
 
-  onMouseDown(x, y) {
-    super.onMouseDown();
-    console.log(`## mouse down on welcome scene!`);
+class MainScreen extends GrassBackground {
+  // all the moles in stage
+  /**
+   * @type {SimpleMoleState[]} cached moles list
+   */
+  moles = [];
+
+  // TODO: mole box grid ? ...
+  molePositions = [];
+  // TODO: hammer cursor to init ...
+  hammer = null;
+  // random position to update
+  globalRandomMole = 0;
+
+  constructor(width, height) {
+    super('MainScene', width, height);
+    this.initMoleGrid(SimpleMoleState);
   }
 
-  onMouseUp(x, y) {
-    super.onMouseUp();
-    console.log(`## mouse up on welcome scene!`);
+  /**
+   * Moles grid to cache each state of mole
+   * @param { SimpleMoleState } MoleStateClass
+   * @returns
+   */
+  initMoleGrid(MoleStateClass) {
+    // PARAMETERS USED IN THIS DRAWING:
+    const mSize = 4;
+    const mStartX = 36;
+    const mStartY = 100;
+    const mWidth = 100;
+    const mHeight = 64;
+    for (let row = 0; row < mSize; row += 1) {
+      for (let col = 0; col < mSize; col += 1) {
+        const posX = col * mWidth + mStartX;
+        const posY = row * mHeight + mStartY;
+        const index = row * mSize + col;
+        const mole = new MoleStateClass(posX, posY, index);
+        this.moles.push(mole);
+        this.addDrawable(mole);
+      }
+    }
+  }
+
+  /**
+   * Update characters in scene
+   * @param {number} mouseX
+   * @param {number} mouseY
+   */
+  onSceneUpdate(mouseX, mouseY) {
+    this.moles.forEach((m) => {
+      m.selectMoleAt(this.globalRandomMole);
+      m.setHitState(this.isMouseDown);
+      m.setMousePosition(mouseX, mouseY);
+    });
   }
 
   onEachSecond() {
-    // console.log(`>>> one loopin second!`);
-    // console.log(new Date().getTime());
+    console.log(`>>> one loopin second!`);
+    // updage random position
+    this.globalRandomMole = Math.floor(Math.random() * 16);
   }
 }
 

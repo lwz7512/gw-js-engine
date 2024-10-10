@@ -500,7 +500,9 @@ class Scene {
   sceneWidth = 0;
   sceneHeight = 0;
 
+  /** mouse x */
   _stageX = 0;
+  /** mouse y */
   _stageY = 0;
 
   /**
@@ -508,11 +510,13 @@ class Scene {
    */
   _cursor = null;
 
+  _isMouseDown = false;
+
   // assets: sounds,images ...
 
   /**
-   * drawable thing: characters, props ...
-   * @type {(Drawable | ShapeDescribable)[]} display objects that can be drew through canvas API
+   * Display objects that can be drew through canvas API
+   * @type {(Drawable | ShapeDescribable)[]}
    */
   drawables = [];
 
@@ -574,6 +578,10 @@ class Scene {
 
   get width() {
     return this.sceneWidth;
+  }
+
+  get isMouseDown() {
+    return this._isMouseDown;
   }
 
   /**
@@ -657,6 +665,7 @@ class Scene {
    */
   onMouseDown(x, y) {
     this.cursor.setMouseDown();
+    this._isMouseDown = true;
   }
 
   /**
@@ -667,6 +676,7 @@ class Scene {
    */
   onMouseUp(x, y) {
     this.cursor.setMouseUp();
+    this._isMouseDown = false;
   }
 
   /**
@@ -677,13 +687,15 @@ class Scene {
     const y = this._stageY;
     this.drawables.forEach((d) => d.onChange(x, y));
     // call sub-scene class commit!
-    this.onSceneUpdate();
+    this.onSceneUpdate(x, y);
   }
 
   /**
    * abstract method for sub-scene class implementation use
+   * @param {number} mouseX mouse x in stage
+   * @param {number} mouseY mouse y in stage
    */
-  onSceneUpdate() {
+  onSceneUpdate(mouseX, mouseY) {
     //
   }
 
