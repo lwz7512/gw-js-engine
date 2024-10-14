@@ -287,28 +287,18 @@ export class SimpleMole extends Character {
     this.isDebugMode = true;
   }
 
-  onUpdate() {
-    if (this.currentState === 'hited') {
-      this.playSound('ouch');
-    }
-  }
-
   /**
-   * looping mole state before rendering
-   * @returns void
+   * standing state
+   * @returns
    */
-  onChange() {
-    // standing state
+  onUpdate() {
     const visible = this.checkIsVisible();
     // is visible and mouse down, check collistion:
     if (visible && this.isHit) {
       const collided = this.checkCollision();
       if (collided) {
-        // console.log(`### Being hited!`);
+        this.playHitSoundAndMarkScore4Once();
         this.changeState('hited');
-        // TODO: play sound
-        // ouchSoundTrack.currentTime = 0;
-        // ouchSoundTrack.play();
         return;
       }
     }
@@ -317,6 +307,17 @@ export class SimpleMole extends Character {
       this.changeState('stand');
     } else {
       this.changeState('idle');
+    }
+  }
+
+  /**
+   * TODO: add score display...
+   */
+  playHitSoundAndMarkScore4Once() {
+    if (this.currentState !== 'hited') {
+      this.playSound('ouch');
+      // console.log(`play sound!`);
+      // console.log(`### Being hited!`);
     }
   }
 

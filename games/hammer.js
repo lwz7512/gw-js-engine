@@ -1,5 +1,10 @@
 // ================ Hammer Implemenation Area =========================
-import { Cursor } from '../src/lib/index.js';
+import {
+  Cursor,
+  drawStarWithStroke,
+  drawRotatedFillRect,
+  drawCircleWithFillStroke,
+} from '../src/lib/index.js';
 
 const HammerState = {
   DOWN: 'DOWN',
@@ -36,28 +41,12 @@ export class SimpleHammer extends Cursor {
     this.setState(HammerState.UP);
   }
 
-  drawRotatedRect(ctx, x, y, width, height, degrees) {
-    // first save the untranslated/unrotated context
-    ctx.save();
-
-    ctx.beginPath();
-    // move the rotation point to the center of the rect
-    ctx.translate(x + width / 2, y + height / 2);
-    // rotate the rect
-    ctx.rotate((degrees * Math.PI) / 180);
-
-    // draw the rect on the transformed context
-    // Note: after transforming [0,0] is visually [x,y]
-    // so the rect needs to be offset accordingly when drawn
-    ctx.roundRect(-width / 2, -height / 2, width, height, [5]);
-
-    ctx.fillStyle = 'gold';
-    ctx.fill();
-
-    // restore the context to its untranslated/unrotated state
-    ctx.restore();
-  }
-
+  /**
+   * Draw hammer up skin
+   * @param {CanvasRenderingContext2D} ctx canvas context
+   * @param {number} mx mouse x
+   * @param {number} my mouse y
+   */
   paintHammerUp(ctx, mx, my) {
     // Draw the ellipse
     ctx.fillStyle = 'red';
@@ -90,19 +79,20 @@ export class SimpleHammer extends Cursor {
     ctx.ellipse(mx - 12, my + 18, 6, 20, -Math.PI / 3, 0, 2 * Math.PI);
     ctx.fill();
 
-    this.drawRotatedRect(ctx, mx + 6, my + 22, 80, 10, 30);
+    drawRotatedFillRect(ctx, mx + 6, my + 22, 80, 10, 30);
 
     // draw hit reference green dot
     if (this.isDebugMode) {
-      ctx.strokeStyle = '#000000';
-      ctx.moveTo(mx, my);
-      ctx.fillStyle = '#00FF00';
-      ctx.beginPath();
-      ctx.arc(mx, my, 4, 0, 2 * Math.PI);
-      ctx.fill();
+      drawCircleWithFillStroke(ctx, mx, my, 4, '#00FF00', '#000000');
     }
   }
 
+  /**
+   * Draw hammer down skin
+   * @param {CanvasRenderingContext2D} ctx canvas context
+   * @param {number} mx start(mouse) x
+   * @param {number} my start(mouse) y
+   */
   paintHammerDown(ctx, mx, my) {
     // Draw the ellipse
     ctx.fillStyle = 'red';
@@ -135,66 +125,12 @@ export class SimpleHammer extends Cursor {
     ctx.ellipse(mx, my + 28, 6, 20, -Math.PI / 2, 0, 2 * Math.PI);
     ctx.fill();
 
-    this.drawRotatedRect(ctx, mx + 6, my + 22, 80, 10, 15);
+    drawRotatedFillRect(ctx, mx + 6, my + 22, 80, 10, 15);
 
     // draw hit reference green dot
     if (this.isDebugMode) {
-      ctx.strokeStyle = '#000000';
-      ctx.moveTo(mx, my);
-      ctx.fillStyle = '#00FF00';
-      ctx.beginPath();
-      ctx.arc(mx, my + 10, 4, 0, 2 * Math.PI);
-      ctx.fill();
+      drawCircleWithFillStroke(ctx, mx, my + 10, 4, '#00FF00', '#000000');
     }
-  }
-
-  /**
-   * Draw star with spikes and radius
-   *
-   * EG: drawStar(175, 100, 12, 30, 15);
-   * drawStar(75, 100, 5, 30, 15);
-   * drawStar(175, 100, 12, 30, 10);
-   * drawStar(75, 200, 6, 30, 15);
-   * drawStar(175, 200, 20, 30, 25);
-   *
-   * @param {CanvasRenderingContext2D} ctx canvas context
-   * @param {number} cx
-   * @param {number} cy
-   * @param {number} spikes
-   * @param {number} outerRadius
-   * @param {number} innerRadius
-   */
-  drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
-    var rot = (Math.PI / 2) * 3;
-    var x = cx;
-    var y = cy;
-    var step = Math.PI / spikes;
-
-    ctx.save();
-    ctx.strokeStyle = '#000';
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - outerRadius);
-    for (let i = 0; i < spikes; i++) {
-      x = cx + Math.cos(rot) * outerRadius;
-      y = cy + Math.sin(rot) * outerRadius;
-      ctx.lineTo(x, y);
-      rot += step;
-
-      x = cx + Math.cos(rot) * innerRadius;
-      y = cy + Math.sin(rot) * innerRadius;
-      ctx.lineTo(x, y);
-      rot += step;
-    }
-    ctx.lineTo(cx, cy - outerRadius);
-    ctx.closePath();
-    ctx.lineWidth = 5;
-    // ctx.strokeStyle='blue';
-    ctx.strokeStyle = 'red';
-    ctx.stroke();
-    // ctx.fillStyle='skyblue';
-    ctx.fillStyle = 'yellow';
-    ctx.fill();
-    ctx.restore();
   }
 
   onUpdate() {
@@ -211,7 +147,7 @@ export class SimpleHammer extends Cursor {
     } else {
       // check if hit the mole to draw star!
       // for now just draw star at each hit
-      this.drawStar(ctx, hammerX - 10, hammerY + 30, 12, 30, 15);
+      drawStarWithStroke(ctx, hammerX - 10, hammerY + 30, 12, 30, 15);
       // then draw hammer
       this.paintHammerDown(ctx, hammerX, hammerY);
     }
