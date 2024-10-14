@@ -162,7 +162,14 @@ export class Interactivable extends Drawable {
   onChange(posX, posY) {
     this._cursorX = posX;
     this._cursorY = posY;
+    // for sub-class to override
+    this.onUpdate(posX, posY);
   }
+
+  /**
+   * abstract method for sub-class to override in safe!
+   */
+  onUpdate() {}
 
   onMouseOver() {
     //
@@ -195,6 +202,20 @@ export class Cursor extends Interactivable {
   /** abstract method */
   setMouseUp() {
     //
+  }
+
+  /** abstrac method safe to override */
+  onUpdate() {
+    //
+  }
+
+  /**
+   * Request sound track playing by name
+   * @param {string} name sound track name
+   */
+  playSound(name) {
+    const evt = new CustomEvent('playSound', { detail: name });
+    document.dispatchEvent(evt);
   }
 }
 
@@ -233,7 +254,10 @@ export class DrawableState {
  * Character class that implements simple state machine behaviors.
  */
 export class Character extends Interactivable {
-  /** dynamic state */
+  /**
+   * dynamic state
+   * @type {string}
+   */
   _currentState = null;
 
   /**
@@ -250,6 +274,10 @@ export class Character extends Interactivable {
     this._states = states;
     // set default state
     this._currentState = states[0].name;
+  }
+
+  get currentState() {
+    return this._currentState;
   }
 
   /**
@@ -279,7 +307,32 @@ export class Character extends Interactivable {
       console.warn(`State not found: ${this._currentState}`);
       return;
     }
-    state.draw(ctx);
+    this.onStateDraw(state, ctx);
+  }
+
+  /**
+   * abstract method for sub-class to override
+   */
+  onUpdate() {
+    //
+  }
+
+  /**
+   * Request sound track playing by name
+   * @param {string} name sound track name
+   */
+  playSound(name) {
+    const evt = new CustomEvent('playSound', { detail: name });
+    document.dispatchEvent(evt);
+  }
+
+  /**
+   * draw curremt state with canvas contex
+   * @param {DrawableState} state current state
+   * @param {CanvasRenderingContext2D} ctx canvas context
+   */
+  onStateDraw(state, ctx) {
+    //
   }
 }
 

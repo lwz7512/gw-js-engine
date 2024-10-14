@@ -67,6 +67,11 @@ const GW_APP = {
   startGame: (game) => undefined,
   /** stop game */
   stopGame: () => undefined,
+  /**
+   * sounds object
+   * @type {{[name: string]: Audio}}
+   */
+  sounds: {},
 };
 
 GW_APP.isGameRunning = function () {
@@ -201,6 +206,29 @@ const initStage = (
 };
 
 /**
+ * load audio files by url
+ * @param {{name: string, url: string, playbackRate: number}[]} sounds souds url list
+ */
+const initAudio = (sounds) => {
+  sounds.forEach(({ name, url, playbackRate }) => {
+    const audioTrack = new Audio(url);
+    GW_APP.sounds[name] = audioTrack;
+    if (playbackRate) {
+      audioTrack.playbackRate = playbackRate;
+    }
+  });
+};
+
+/**
+ * Get audio track by name
+ * @param {string} name audio track name
+ * @returns audio object
+ */
+const findAudio = (name) => {
+  return GW_APP.sounds[name];
+};
+
+/**
  * open loop flag!
  * write the object to GW_APP, so use `GW_APP` rather than `this`!
  * @param {Game} game object
@@ -317,6 +345,11 @@ class Game extends EventTarget {
   clickEventHandler = null;
 
   /**
+   * sound play event handelr
+   */
+  soundPlayHandler = null;
+
+  /**
    * global cursor object
    * @type { Cursor }
    */
@@ -382,6 +415,24 @@ class Game extends EventTarget {
     };
     // listening mouse event...
     document.addEventListener('click', this.clickEventHandler);
+
+    this.soundPlayHandler = (event) => {
+      const name = event.detail;
+      // find and play
+      if (!name) {
+        return console.warn('## No name from sound request event!');
+      }
+      // trying to find sound track
+      const soundTrack = findAudio(name);
+      if (soundTrack) {
+        soundTrack.currentTime = 0;
+        soundTrack.play();
+      } else {
+        console.warn(`## No sound found for request name: ${name}`);
+      }
+    };
+    // listen sound playing request...
+    document.addEventListener('playSound', this.soundPlayHandler);
   }
 
   /**
@@ -389,6 +440,7 @@ class Game extends EventTarget {
    */
   destroy() {
     document.removeEventListener('click', this.clickEventHandler);
+    document.removeEventListener('playSound', this.soundPlayHandler);
   }
 
   /**
@@ -438,6 +490,9 @@ class Game extends EventTarget {
    */
   onMouseDown(x, y) {
     this.activeScene.onMouseDown(x, y);
+    if (!this._hideCursor) {
+      this.cursor.setMouseDown();
+    }
   }
 
   /**
@@ -448,6 +503,9 @@ class Game extends EventTarget {
    */
   onMouseUp(x, y) {
     this.activeScene.onMouseUp(x, y);
+    if (!this._hideCursor) {
+      this.cursor.setMouseUp();
+    }
   }
 
   /**
@@ -664,7 +722,6 @@ class Scene {
    * @param {number} y mouse y position in stage
    */
   onMouseDown(x, y) {
-    this.cursor.setMouseDown();
     this._isMouseDown = true;
   }
 
@@ -675,7 +732,6 @@ class Scene {
    * @param {number} y mouse y position in stage
    */
   onMouseUp(x, y) {
-    this.cursor.setMouseUp();
     this._isMouseDown = false;
   }
 
@@ -740,5 +796,5 @@ class Scene {
 
 // ========= END OF Scene class ===============
 
-export { initStage, startGame, stopGame };
+export { initStage, initAudio, findAudio, startGame, stopGame };
 export { Game, Scene };

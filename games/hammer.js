@@ -29,12 +29,10 @@ export class SimpleHammer extends Cursor {
   }
 
   setMouseDown() {
-    console.log(`>> hammer down!`);
     this.setState(HammerState.DOWN);
   }
 
   setMouseUp() {
-    console.log(`>> hammer up!`);
     this.setState(HammerState.UP);
   }
 
@@ -93,6 +91,16 @@ export class SimpleHammer extends Cursor {
     ctx.fill();
 
     this.drawRotatedRect(ctx, mx + 6, my + 22, 80, 10, 30);
+
+    // draw hit reference green dot
+    if (this.isDebugMode) {
+      ctx.strokeStyle = '#000000';
+      ctx.moveTo(mx, my);
+      ctx.fillStyle = '#00FF00';
+      ctx.beginPath();
+      ctx.arc(mx, my, 4, 0, 2 * Math.PI);
+      ctx.fill();
+    }
   }
 
   paintHammerDown(ctx, mx, my) {
@@ -128,6 +136,16 @@ export class SimpleHammer extends Cursor {
     ctx.fill();
 
     this.drawRotatedRect(ctx, mx + 6, my + 22, 80, 10, 15);
+
+    // draw hit reference green dot
+    if (this.isDebugMode) {
+      ctx.strokeStyle = '#000000';
+      ctx.moveTo(mx, my);
+      ctx.fillStyle = '#00FF00';
+      ctx.beginPath();
+      ctx.arc(mx, my + 10, 4, 0, 2 * Math.PI);
+      ctx.fill();
+    }
   }
 
   /**
@@ -179,6 +197,13 @@ export class SimpleHammer extends Cursor {
     ctx.restore();
   }
 
+  onUpdate() {
+    if (this.currentState == HammerState.DOWN) {
+      // play hammer down sound
+      this.playSound('hit');
+    }
+  }
+
   onDraw(ctx) {
     const [hammerX, hammerY] = [this.cursorX, this.cursorY];
     if (this.currentState === HammerState.UP) {
@@ -189,15 +214,6 @@ export class SimpleHammer extends Cursor {
       this.drawStar(ctx, hammerX - 10, hammerY + 30, 12, 30, 15);
       // then draw hammer
       this.paintHammerDown(ctx, hammerX, hammerY);
-    }
-    // draw hit reference red dot
-    if (this.isDebugMode) {
-      ctx.strokeStyle = '#000000';
-      ctx.moveTo(hammerX, hammerY);
-      ctx.fillStyle = '#00FF00';
-      ctx.beginPath();
-      ctx.arc(hammerX, hammerY, 4, 0, 2 * Math.PI);
-      ctx.fill();
     }
   } // end of state rendering
 } // end of SimpleHammerState

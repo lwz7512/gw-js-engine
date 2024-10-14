@@ -14,6 +14,7 @@ class IdleMole extends DrawableState {
    * @param {number} posY mole position y
    * @param {number} position mole index in list
    * @param {boolean} openEyes if mole open eyes
+   * @param {boolean} showDebugDot if display debug dot on mole's head
    */
   drawMoleHoleWithDynaHead(ctx, posX, posY, position = 0, openEyes = true) {
     // keep current unclipped context
@@ -126,16 +127,6 @@ class IdleMole extends DrawableState {
     ctx.lineTo(posX + r + 16, posY + 71 - position);
     ctx.stroke();
 
-    // draw hit reference red dot
-    // const visible = this.checkIsVisible();
-    // if (this.isDebugMode && visible) {
-    //   ctx.moveTo(posX, posY);
-    //   ctx.fillStyle = '#FF0000';
-    //   ctx.beginPath();
-    //   // this is the hit detection coordinates
-    //   ctx.arc(posX + 36, posY + 6, 4, 0, 2 * Math.PI);
-    //   ctx.fill();
-    // }
     // finish one session of drawing
     ctx.restore();
   }
@@ -149,11 +140,35 @@ class IdleMole extends DrawableState {
  * stand out state
  */
 class StandMole extends IdleMole {
-  constructor() {
+  _debug = false;
+  _dotOffsetX = 0;
+  _dotOffsetY = 0;
+  constructor(debug = false, dotOffsetX = 0, dotOffsetY = 0) {
     super('stand');
+    this._debug = debug;
+    this._dotOffsetX = dotOffsetX;
+    this._dotOffsetY = dotOffsetY;
   }
+
+  drawDebugDot(ctx, posX, posY) {
+    if (!this._debug) return;
+    ctx.moveTo(posX, posY);
+    ctx.fillStyle = '#FF0000';
+    ctx.beginPath();
+    // this is the hit detection coordinates
+    ctx.arc(
+      posX + this._dotOffsetX,
+      posY + this._dotOffsetY,
+      4,
+      0,
+      2 * Math.PI
+    );
+    ctx.fill();
+  }
+
   draw(ctx, posX, posY) {
-    this.drawMoleHoleWithDynaHead(ctx, posX, posY, 45);
+    this.drawMoleHoleWithDynaHead(ctx, posX, posY, 45, true);
+    this.drawDebugDot(ctx, posX, posY);
   }
 }
 
@@ -167,12 +182,17 @@ class HitedMole extends IdleMole {
   }
 }
 
+const MOLE_HIT_SPOT = {
+  offsetX: 36,
+  offsetY: 6,
+};
+
 /**
  * Mole state implementation
  * TODO: modify this class with state machine ...
  * @date 2024/10/06
  */
-export class SimpleMoleState extends Character {
+export class SimpleMole extends Character {
   /** mole x coordinate */
   posX = 0;
   /** mole y coordinate */
@@ -195,9 +215,17 @@ export class SimpleMoleState extends Character {
   // /** keep hit state counter */
   hitStayTimer = 0;
 
-  constructor(x, y, sequence) {
+  _hitSpotOffsetX = 36;
+  _HITSpotOffsetY = 6;
+
+  constructor(x, y, sequence, debug = false) {
+    const { offsetX, offsetY } = MOLE_HIT_SPOT;
     // init mole states
-    super([new IdleMole(), new StandMole(), new HitedMole()]);
+    super([
+      new IdleMole(),
+      new StandMole(debug, offsetX, offsetY),
+      new HitedMole(),
+    ]);
     // position in canvas
     this.posX = x;
     this.posY = y;
@@ -206,20 +234,19 @@ export class SimpleMoleState extends Character {
   }
 
   /**
-   * TODO: to move this function out ... for user implementation!
+   * check two red dots distance
    * @returns
    */
   checkCollision() {
-    // const xOffset = 36;
-    // const yOffset = 6;
-    // const xDiff = this.posX - this.hammerX;
-    // const yDiff = this.posY - this.hammerY;
-    // const distance = Math.hypot(xDiff + xOffset, yDiff + yOffset);
-    // // distance within this threshold considered hit success!
-    // const threshold = 30;
+    const { offsetX, offsetY } = MOLE_HIT_SPOT;
+    const xDiff = this.posX - this.hammerX;
+    const yDiff = this.posY - this.hammerY;
+    const distance = Math.hypot(xDiff + offsetX, yDiff + offsetY);
+    // distance within this threshold considered hit success!
+    const threshold = 30;
     // console.log(distance);
-    // return threshold > distance;
-    return false;
+    return threshold > distance;
+    // return false;
   }
 
   /**
@@ -260,8 +287,14 @@ export class SimpleMoleState extends Character {
     this.isDebugMode = true;
   }
 
+  onUpdate() {
+    if (this.currentState === 'hited') {
+      this.playSound('ouch');
+    }
+  }
+
   /**
-   * looping mole state ...
+   * looping mole state before rendering
    * @returns void
    */
   onChange() {
@@ -271,9 +304,9 @@ export class SimpleMoleState extends Character {
     if (visible && this.isHit) {
       const collided = this.checkCollision();
       if (collided) {
-        console.log(`### Being hited!`);
+        // console.log(`### Being hited!`);
         this.changeState('hited');
-        // play sound
+        // TODO: play sound
         // ouchSoundTrack.currentTime = 0;
         // ouchSoundTrack.play();
         return;
@@ -289,14 +322,10 @@ export class SimpleMoleState extends Character {
 
   /**
    * Draw mole skin by looking for its state
+   * @param {DrawableState} state current state
    * @param {CanvasRenderingContext2D} ctx canvas context
    */
-  onDraw(ctx) {
-    const state = this.findState();
-    if (!state) {
-      console.warn(`State not found: ${this._currentState}`);
-      return;
-    }
+  onStateDraw(state, ctx) {
     // draw mole by state
     state.draw(ctx, this.posX, this.posY);
   }

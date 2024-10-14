@@ -170,6 +170,32 @@ export class ShapeDesc {
 }
 
 /**
+ * Draw a rectangle with gradient colors fill
+ * @param {CanvasRenderingContext2D} ctx canvas context
+ * @param {string} colorStart gradient start color
+ * @param {string} colorEnd gradient end color
+ * @param {number} rectWidth gradient rect width
+ * @param {number} rectHeight gradient rect height
+ */
+export const drawGradientRect = (
+  ctx,
+  colorStart,
+  colorEnd,
+  rectWidth,
+  rectHeight
+) => {
+  // background sky, add linear gradient
+  const grd = ctx.createLinearGradient(0, 0, 0, 150);
+  // light blue
+  grd.addColorStop(0, colorStart);
+  // dark blue
+  grd.addColorStop(1, colorEnd);
+
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, rectWidth, rectHeight);
+};
+
+/**
  * Draw a simple filled triangle without border
  * @param {CanvasRenderingContext2D} ctx canvas context
  * @param {number[]} pt0 start point
@@ -185,6 +211,21 @@ export const drawSolidTriangle = (ctx, pt0, pt1, pt2, fillStyle) => {
   ctx.lineTo(pt2[0], pt2[1]);
   ctx.closePath();
   ctx.fill();
+};
+
+/**
+ * Draw a rectangle with `fillStyle` color fill, no border.
+ * @param {CanvasRenderingContext2D} ctx canvas context
+ * @param {number} x rect x position
+ * @param {number} y rect y position
+ * @param {number} width rect width
+ * @param {number} height rect height
+ * @param {string} fillStyle fill color
+ */
+export const drawFilledRectNoStroke = (ctx, x, y, width, height, fillStyle) => {
+  ctx.fillStyle = fillStyle;
+  ctx.fillRect(x, y, width, height);
+  ctx.beginPath();
 };
 
 /**
