@@ -218,6 +218,12 @@ export class SimpleMole extends Character {
   _hitSpotOffsetX = 36;
   _HITSpotOffsetY = 6;
 
+  // hit callback
+  /**
+   * @type {function} call back function
+   */
+  _onHitCallback = null;
+
   constructor(x, y, sequence, debug = false) {
     const { offsetX, offsetY } = MOLE_HIT_SPOT;
     // init mole states
@@ -288,6 +294,14 @@ export class SimpleMole extends Character {
   }
 
   /**
+   * Set mole hit call back to notify main scene
+   * @param {function} callback hit call back from main scene
+   */
+  setHitCallBack(callback) {
+    this._onHitCallback = callback;
+  }
+
+  /**
    * standing state
    * @returns
    */
@@ -311,13 +325,14 @@ export class SimpleMole extends Character {
   }
 
   /**
-   * TODO: add score display...
+   * Do 2 things:
+   * - play hit sound
+   * - execute callback function
    */
   playHitSoundAndMarkScore4Once() {
     if (this.currentState !== 'hited') {
       this.playSound('ouch');
-      // console.log(`play sound!`);
-      // console.log(`### Being hited!`);
+      this._onHitCallback && this._onHitCallback();
     }
   }
 

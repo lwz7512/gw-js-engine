@@ -1,17 +1,42 @@
 import {
   Game,
   Scene,
+  Button,
   initStage,
   initAudio,
   startGame,
   drawGradientRect,
   drawFilledRectNoStroke,
   drawSolidTriangle,
+  SimpleText,
 } from '../src/lib/index.js';
 import { SimpleMole } from './mole.js';
 import { SimpleHammer } from './hammer.js';
 
 // ======= UI ASSETS: background and characters ==============
+
+// ========= WELCOME SCREEN ============
+export class WelcomeScreen extends Scene {
+  _button = null;
+
+  constructor() {
+    super('Welcome');
+
+    const style = {
+      x: 250,
+      y: 200,
+      width: 150,
+      text: 'Enter Game',
+    };
+
+    const options = { x: 140, y: 90, fontSize: 24 };
+    this.addDrawable(new SimpleText('== Welcome to Whac A Mole ==', options));
+
+    const btnOnClick = () => this.goto('MainScene');
+    this._button = new Button(style, btnOnClick);
+    this.addDrawable(this._button);
+  }
+}
 
 // ======= Main Scene ==================
 
@@ -93,6 +118,9 @@ class GrassBackground extends Scene {
   }
 }
 
+/**
+ * === Main screen for game ==========
+ */
 class MainScreen extends GrassBackground {
   /**
    * all the moles in stage
@@ -105,10 +133,28 @@ class MainScreen extends GrassBackground {
 
   _debug = false;
 
+  /**
+   * score number to increase
+   */
+  scoreNumber = 0;
+
+  /**
+   * @type {SimpleText} sore text to display hit number
+   */
+  scoreText = null;
+
   constructor(width, height, debug = false) {
     super('MainScene', width, height);
     this._debug = debug;
     this.initMoleGrid(SimpleMole);
+    // add a score display
+    const style = {
+      x: width - 100,
+      y: 30,
+      fontSize: 16,
+    };
+    this.scoreText = new SimpleText('score: 0', style);
+    this.addDrawable(this.scoreText);
   }
 
   /**
@@ -117,7 +163,6 @@ class MainScreen extends GrassBackground {
    * @returns
    */
   initMoleGrid(MoleStateClass) {
-    // PARAMETERS USED IN THIS DRAWING:
     const mSize = 4;
     const mStartX = 36;
     const mStartY = 100;
@@ -128,11 +173,23 @@ class MainScreen extends GrassBackground {
         const posX = col * mWidth + mStartX;
         const posY = row * mHeight + mStartY;
         const index = row * mSize + col;
+        /**
+         * @type {SimpleMole}
+         */
         const mole = new MoleStateClass(posX, posY, index, this._debug);
+        // NOTE: pass score reset callback to mole!
+        // use `bind` to keep function context of `MainScreen` class!
+        const callback = this.onScoreAddOne.bind(this);
+        mole.setHitCallBack(callback);
         this.moles.push(mole);
         this.addDrawable(mole);
       }
     }
+  }
+
+  onScoreAddOne() {
+    this.scoreNumber += 1;
+    this.scoreText.text = `score: ${this.scoreNumber}`;
   }
 
   /**
@@ -158,7 +215,7 @@ class MainScreen extends GrassBackground {
 
 const width = 640,
   height = 480;
-const screens = [new MainScreen(width, height, true)];
+const screens = [new WelcomeScreen(), new MainScreen(width, height, true)];
 const cursor = new SimpleHammer(true);
 const options = { width, height, cursor, showFancyCursor: true };
 const game = new Game(screens, options);
