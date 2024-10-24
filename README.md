@@ -4,8 +4,7 @@ Specifically designed for desktop software `GameWeaver`.
 
 Created since 2024/09/06
 
-![welcome game](./assets/welcome_to_gw.png "Welcome Demo")
-
+<img src="./assets/welcome_to_gw.png" width="640" height="480" title="welcome screen" />
 
 ## Features
 
